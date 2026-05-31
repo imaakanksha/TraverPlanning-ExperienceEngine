@@ -295,6 +295,7 @@ function App() {
                 setActiveDayNum={setActiveDayNum}
                 simulatedTimeSlot={isSimulating ? simTimeSlot : undefined}
                 isSimulating={isSimulating}
+                triggeredEvents={triggeredEvents}
               />
             )}
 

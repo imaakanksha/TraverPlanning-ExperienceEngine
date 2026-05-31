@@ -413,3 +413,45 @@
   font-weight: 500;
   margin-top: 0.5rem;
 }
+
+/* Dynamic Event Simulator Glows */
+@keyframes pulseWeather {
+  0% { border-color: hsl(var(--border-primary)); box-shadow: 0 0 0px transparent; }
+  50% { border-color: #06b6d4; box-shadow: 0 0 15px rgba(6, 182, 212, 0.35); }
+  100% { border-color: hsl(var(--border-primary)); box-shadow: 0 0 0px transparent; }
+}
+@keyframes pulseTraffic {
+  0% { border-color: hsl(var(--border-primary)); box-shadow: 0 0 0px transparent; }
+  50% { border-color: #f59e0b; box-shadow: 0 0 15px rgba(245, 158, 11, 0.35); }
+  100% { border-color: hsl(var(--border-primary)); box-shadow: 0 0 0px transparent; }
+}
+@keyframes pulseCrowd {
+  0% { border-color: hsl(var(--border-primary)); box-shadow: 0 0 0px transparent; }
+  50% { border-color: #ec4899; box-shadow: 0 0 15px rgba(236, 72, 153, 0.35); }
+  100% { border-color: hsl(var(--border-primary)); box-shadow: 0 0 0px transparent; }
+}
+@keyframes pulseBudget {
+  0% { border-color: hsl(var(--border-primary)); box-shadow: 0 0 0px transparent; }
+  50% { border-color: #ef4444; box-shadow: 0 0 15px rgba(239, 68, 68, 0.35); }
+  100% { border-color: hsl(var(--border-primary)); box-shadow: 0 0 0px transparent; }
+}
+
+.weatherGlow {
+  animation: pulseWeather 2s infinite;
+  background: rgba(6, 182, 212, 0.04) !important;
+}
+
+.trafficGlow {
+  animation: pulseTraffic 2s infinite;
+  background: rgba(245, 158, 11, 0.04) !important;
+}
+
+.crowdGlow {
+  animation: pulseCrowd 2s infinite;
+  background: rgba(236, 72, 153, 0.04) !important;
+}
+
+.budgetGlow {
+  animation: pulseBudget 2s infinite;
+  background: rgba(239, 68, 68, 0.04) !important;
+}

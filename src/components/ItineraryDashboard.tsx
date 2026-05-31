@@ -18,6 +18,7 @@ interface ItineraryDashboardProps {
   setActiveDayNum: (num: number) => void;
   simulatedTimeSlot?: 'morning' | 'lunch' | 'afternoon' | 'dinner' | 'evening';
   isSimulating?: boolean;
+  triggeredEvents?: Record<string, boolean>;
 }
 
 export const ItineraryDashboard: React.FC<ItineraryDashboardProps> = ({
@@ -26,7 +27,8 @@ export const ItineraryDashboard: React.FC<ItineraryDashboardProps> = ({
   activeDayNum,
   setActiveDayNum,
   simulatedTimeSlot,
-  isSimulating = false
+  isSimulating = false,
+  triggeredEvents = {}
 }) => {
   const [swappingSlot, setSwappingSlot] = useState<{ dayNum: number; slotKey: 'morning' | 'afternoon' | 'evening' } | null>(null);
   const [mapMode, setMapMode] = useState<'vector' | 'google'>('vector');
@@ -78,12 +80,15 @@ export const ItineraryDashboard: React.FC<ItineraryDashboardProps> = ({
 
   const renderTransit = (transit?: TransitInfo) => {
     if (!transit) return null;
+    const isTrafficImpacted = triggeredEvents?.TRAFFIC && transit.mode !== 'Walking';
+    const transitGlowClass = isTrafficImpacted ? styles.trafficGlow : '';
     return (
-      <div className={styles.transitConnector} role="note" aria-label="Transit recommendation">
+      <div className={`${styles.transitConnector} ${transitGlowClass}`} role="note" aria-label="Transit recommendation">
         <Navigation size={12} style={{ transform: 'rotate(45deg)' }} />
         <span>
           Travel: {transit.durationMin} mins via <strong>{transit.mode}</strong> 
           {transit.costApprox > 0 ? ` (Est. $${transit.costApprox})` : ' (Free)'}
+          {isTrafficImpacted && ' 🚦 (Traffic Jam Alert)'}
         </span>
       </div>
     );
@@ -93,14 +98,28 @@ export const ItineraryDashboard: React.FC<ItineraryDashboardProps> = ({
     const isCurrent = isSimulating && simulatedTimeSlot === slotKey;
     const item = slot.activity;
 
+    let glowClass = '';
+    let statusText = '';
+    if (triggeredEvents?.WEATHER && !item.isIndoor) {
+      glowClass = styles.weatherGlow;
+      statusText = ' 🌧️ (Rain Warning)';
+    } else if (triggeredEvents?.CROWD && item.intensity === 'High') {
+      glowClass = styles.crowdGlow;
+      statusText = ' 👥 (Crowded)';
+    } else if (triggeredEvents?.BUDGET && item.costLevel === 3) {
+      glowClass = styles.budgetGlow;
+      statusText = ' 💰 (Expensive)';
+    }
+
     return (
       <div className={`timeline-item ${styles.slotItem}`} role="article" aria-label={`${slotKey} activity`}>
         <div className="timeline-dot" />
-        <div className={`${styles.slotCard} glass-card ${isCurrent ? styles.activeCard : ''}`}>
+        <div className={`${styles.slotCard} glass-card ${isCurrent ? styles.activeCard : ''} ${glowClass}`}>
           <div className={styles.slotTime}>
             {slotKey === 'morning' && '10:00 AM - Morning Sight'}
             {slotKey === 'afternoon' && '02:00 PM - Afternoon Sight'}
             {slotKey === 'evening' && '07:30 PM - Evening Sight'}
+            {statusText}
           </div>
           
           <div className={styles.cardHeader}>
@@ -150,14 +169,22 @@ export const ItineraryDashboard: React.FC<ItineraryDashboardProps> = ({
     const isCurrent = isSimulating && simulatedTimeSlot === mealType.toLowerCase();
     const item = slot.restaurant;
 
+    let glowClass = '';
+    let statusText = '';
+    if (triggeredEvents?.BUDGET && item.costLevel === 3) {
+      glowClass = styles.budgetGlow;
+      statusText = ' 💰 (Expensive Venue)';
+    }
+
     return (
       <div className={`timeline-item ${styles.slotItem}`} role="article" aria-label={`${mealType} dining`}>
         <div className="timeline-dot" />
-        <div className={`${styles.slotCard} ${styles.diningCard} glass-card ${isCurrent ? styles.activeCard : ''}`}>
+        <div className={`${styles.slotCard} ${styles.diningCard} glass-card ${isCurrent ? styles.activeCard : ''} ${glowClass}`}>
           <div className={styles.slotTime}>
             {mealType === 'Breakfast' && '09:00 AM - Breakfast'}
             {mealType === 'Lunch' && '12:30 PM - Lunch Break'}
             {mealType === 'Dinner' && '05:30 PM - Dinner Time'}
+            {statusText}
           </div>
 
           <div className={styles.cardHeader}>
@@ -197,7 +224,7 @@ export const ItineraryDashboard: React.FC<ItineraryDashboardProps> = ({
     <div className="dashboard-grid animate-fade">
       {/* Timeline Column */}
       <div className={styles.timelineColumn}>
-        <div className={`${styles.summaryBanner} glass-panel`} role="banner">
+        <div className={`${styles.summaryBanner} glass-panel ${triggeredEvents?.BUDGET ? styles.budgetGlow : ''}`} role="banner">
           <div className={styles.bannerInfo}>
             <h2>{dest.name} Itinerary</h2>
             <div className={styles.summaryBadges}>
@@ -211,6 +238,11 @@ export const ItineraryDashboard: React.FC<ItineraryDashboardProps> = ({
           <div className={styles.bannerCost} aria-label="Total estimated budget">
             <span className={styles.costLabel}>Total Estimated Budget</span>
             <span className={styles.costVal}>${itinerary.totalCost}</span>
+            {triggeredEvents?.BUDGET && (
+              <span style={{ fontSize: '0.72rem', color: '#ef4444', fontWeight: 'bold', marginTop: '4px', display: 'block' }}>
+                ⚠️ Budget Limit Exhausted
+              </span>
+            )}
           </div>
         </div>
 
