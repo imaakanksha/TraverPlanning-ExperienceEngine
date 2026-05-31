@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import type { Hotel } from '../data/travelDatabase';
 import type { DayItinerary } from '../utils/planningEngine';
 import logger from '../utils/logger';
-import { AlertTriangle, MapPin, Compass } from 'lucide-react';
+import { AlertTriangle, MapPin, Compass, AlertCircle, Award } from 'lucide-react';
 
 interface GoogleMapsViewProps {
   activeDay: DayItinerary;
@@ -10,6 +10,8 @@ interface GoogleMapsViewProps {
   cityName: string;
   destinationId: string;
   apiKey?: string;
+  onAvoidIncident?: (title: string) => void;
+  onInsertHotspot?: (title: string) => void;
 }
 
 // Center coordinates for our database destinations
@@ -31,8 +33,7 @@ export function getGeoCoordinates(
   destId: string
 ): { lat: number; lng: number } {
   const center = CITY_CENTERS[destId] || { lat: 0, lng: 0 };
-  // Scale factor: spread points by roughly 10-15km around the center
-  const latOffset = (50 - y) * 0.0018; // y-axis inverted in standard cartesian vs lat
+  const latOffset = (50 - y) * 0.0018; 
   const lngOffset = (x - 50) * 0.0024;
   return {
     lat: center.lat + latOffset,
@@ -45,7 +46,9 @@ export const GoogleMapsView: React.FC<GoogleMapsViewProps> = ({
   hotel,
   cityName,
   destinationId,
-  apiKey = ''
+  apiKey = '',
+  onAvoidIncident,
+  onInsertHotspot
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const [mapError, setMapError] = useState<string | null>(null);
@@ -54,113 +57,44 @@ export const GoogleMapsView: React.FC<GoogleMapsViewProps> = ({
   
   const mapRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
+  const overlayMarkersRef = useRef<any[]>([]);
   const polylineRef = useRef<any>(null);
   const infoWindowRef = useRef<any>(null);
 
-  // 1. Compute geographical coordinates for the sequence of points
-  const points = React.useMemo(() => {
-    const pts = [
-      {
-        id: hotel.id,
-        name: hotel.name,
-        type: 'Hotel',
-        description: hotel.description,
-        cost: hotel.costApprox,
-        ...getGeoCoordinates(hotel.coordinates.x, hotel.coordinates.y, destinationId)
-      },
-      {
-        id: activeDay.breakfast.restaurant.id,
-        name: activeDay.breakfast.restaurant.name,
-        type: 'Breakfast (Dining)',
-        description: activeDay.breakfast.restaurant.description,
-        cost: activeDay.breakfast.restaurant.costApprox,
-        ...getGeoCoordinates(
-          activeDay.breakfast.restaurant.coordinates.x,
-          activeDay.breakfast.restaurant.coordinates.y,
-          destinationId
-        )
-      },
-      {
-        id: activeDay.morning.activity.id,
-        name: activeDay.morning.activity.name,
-        type: 'Morning Attraction',
-        description: activeDay.morning.activity.description,
-        cost: activeDay.morning.activity.costApprox,
-        ...getGeoCoordinates(
-          activeDay.morning.activity.coordinates.x,
-          activeDay.morning.activity.coordinates.y,
-          destinationId
-        )
-      },
-      {
-        id: activeDay.lunch.restaurant.id,
-        name: activeDay.lunch.restaurant.name,
-        type: 'Lunch (Dining)',
-        description: activeDay.lunch.restaurant.description,
-        cost: activeDay.lunch.restaurant.costApprox,
-        ...getGeoCoordinates(
-          activeDay.lunch.restaurant.coordinates.x,
-          activeDay.lunch.restaurant.coordinates.y,
-          destinationId
-        )
-      },
-      {
-        id: activeDay.afternoon.activity.id,
-        name: activeDay.afternoon.activity.name,
-        type: 'Afternoon Attraction',
-        description: activeDay.afternoon.activity.description,
-        cost: activeDay.afternoon.activity.costApprox,
-        ...getGeoCoordinates(
-          activeDay.afternoon.activity.coordinates.x,
-          activeDay.afternoon.activity.coordinates.y,
-          destinationId
-        )
-      },
-      {
-        id: activeDay.dinner.restaurant.id,
-        name: activeDay.dinner.restaurant.name,
-        type: 'Dinner (Dining)',
-        description: activeDay.dinner.restaurant.description,
-        cost: activeDay.dinner.restaurant.costApprox,
-        ...getGeoCoordinates(
-          activeDay.dinner.restaurant.coordinates.x,
-          activeDay.dinner.restaurant.coordinates.y,
-          destinationId
-        )
-      },
-      {
-        id: activeDay.evening.activity.id,
-        name: activeDay.evening.activity.name,
-        type: 'Evening Attraction',
-        description: activeDay.evening.activity.description,
-        cost: activeDay.evening.activity.costApprox,
-        ...getGeoCoordinates(
-          activeDay.evening.activity.coordinates.x,
-          activeDay.evening.activity.coordinates.y,
-          destinationId
-        )
-      },
-      {
-        id: `${hotel.id}_end`,
-        name: hotel.name,
-        type: 'Hotel Return',
-        description: 'Return to basecamp for overnight rest.',
-        cost: 0,
-        ...getGeoCoordinates(hotel.coordinates.x, hotel.coordinates.y, destinationId)
-      }
+  // 1. Compute geographical coordinates for itinerary markers
+  const itineraryPoints = React.useMemo(() => {
+    return [
+      { id: hotel.id, name: hotel.name, type: 'Hotel', desc: hotel.description, ...getGeoCoordinates(hotel.coordinates.x, hotel.coordinates.y, destinationId) },
+      { id: activeDay.breakfast.restaurant.id, name: activeDay.breakfast.restaurant.name, type: 'Breakfast', desc: activeDay.breakfast.restaurant.description, ...getGeoCoordinates(activeDay.breakfast.restaurant.coordinates.x, activeDay.breakfast.restaurant.coordinates.y, destinationId) },
+      { id: activeDay.morning.activity.id, name: activeDay.morning.activity.name, type: 'Morning Activity', desc: activeDay.morning.activity.description, ...getGeoCoordinates(activeDay.morning.activity.coordinates.x, activeDay.morning.activity.coordinates.y, destinationId) },
+      { id: activeDay.lunch.restaurant.id, name: activeDay.lunch.restaurant.name, type: 'Lunch', desc: activeDay.lunch.restaurant.description, ...getGeoCoordinates(activeDay.lunch.restaurant.coordinates.x, activeDay.lunch.restaurant.coordinates.y, destinationId) },
+      { id: activeDay.afternoon.activity.id, name: activeDay.afternoon.activity.name, type: 'Afternoon Activity', desc: activeDay.afternoon.activity.description, ...getGeoCoordinates(activeDay.afternoon.activity.coordinates.x, activeDay.afternoon.activity.coordinates.y, destinationId) },
+      { id: activeDay.dinner.restaurant.id, name: activeDay.dinner.restaurant.name, type: 'Dinner', desc: activeDay.dinner.restaurant.description, ...getGeoCoordinates(activeDay.dinner.restaurant.coordinates.x, activeDay.dinner.restaurant.coordinates.y, destinationId) },
+      { id: activeDay.evening.activity.id, name: activeDay.evening.activity.name, type: 'Evening Activity', desc: activeDay.evening.activity.description, ...getGeoCoordinates(activeDay.evening.activity.coordinates.x, activeDay.evening.activity.coordinates.y, destinationId) },
+      { id: `${hotel.id}_end`, name: hotel.name, type: 'Hotel Return', desc: 'Overnight lodging.', ...getGeoCoordinates(hotel.coordinates.x, hotel.coordinates.y, destinationId) }
     ];
-    return pts;
   }, [activeDay, hotel, destinationId]);
 
-  // 2. Dynamic loader for Google Maps JavaScript API script
+  // 2. Generate active city overlays (Incidents & Discovery Hotspots)
+  const cityOverlays = React.useMemo(() => {
+    const alertsConfig = [
+      { id: 'ol_inc_1', category: 'incident', title: 'Local Transport Blockage', desc: 'Active signaling block. Re-routing recommended.', x: 48, y: 53 },
+      { id: 'ol_hot_1', category: 'hotspot', title: 'Trending Curated Hotspot', desc: 'Highly rated local recommendation with under 15 min wait.', x: 68, y: 55 },
+      { id: 'ol_cul_1', category: 'cultural', title: 'Cultural Occurrence Area', desc: 'Pop-up lantern lighting and street festival active tonight.', x: 74, y: 32 }
+    ];
+    return alertsConfig.map(c => ({
+      ...c,
+      ...getGeoCoordinates(c.x, c.y, destinationId)
+    }));
+  }, [destinationId]);
+
+  // 3. Dynamic loading script hook
   useEffect(() => {
     if (!apiKey) {
-      setMapError('Google Maps API key is missing. Please provide a VITE_GOOGLE_MAPS_API_KEY in environment variables.');
-      logger.warn('Google Maps Component: API Key is missing.');
+      setMapError('Google Maps API key is missing. Please configure VITE_GOOGLE_MAPS_API_KEY.');
       return;
     }
 
-    // Check if script is already present
     if ((window as any).google && (window as any).google.maps) {
       setMapLoaded(true);
       return;
@@ -176,31 +110,16 @@ export const GoogleMapsView: React.FC<GoogleMapsViewProps> = ({
     script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&callback=${callbackName}`;
     script.async = true;
     script.defer = true;
-    script.onerror = () => {
-      setMapError('Failed to load Google Maps JavaScript API script.');
-      logger.error('Google Maps Loader: Network script load error.');
-    };
+    script.onerror = () => setMapError('Error downloading Google Maps JavaScript SDK.');
 
     document.head.appendChild(script);
 
-    // Safety timeout for loading state
-    const timeout = setTimeout(() => {
-      if (!(window as any).google || !(window as any).google.maps) {
-        setMapError('Google Maps script loading timed out. Check network connection.');
-        logger.error('Google Maps Loader: Loading timeout.');
-      }
-    }, 10000);
-
     return () => {
-      clearTimeout(timeout);
-      // Clean up callback in case component unmounts during load
-      if ((window as any)[callbackName]) {
-        delete (window as any)[callbackName];
-      }
+      if ((window as any)[callbackName]) delete (window as any)[callbackName];
     };
   }, [apiKey]);
 
-  // 3. Initialize/Update Map & Markers
+  // 4. Initializing and updating markers
   useEffect(() => {
     if (!mapLoaded || !mapContainerRef.current || !(window as any).google) return;
 
@@ -208,12 +127,11 @@ export const GoogleMapsView: React.FC<GoogleMapsViewProps> = ({
       const google = (window as any).google;
       const center = CITY_CENTERS[destinationId] || { lat: 0, lng: 0 };
 
-      // Initialize map instance if not already done
       if (!mapRef.current) {
         mapRef.current = new google.maps.Map(mapContainerRef.current, {
           center,
           zoom: 13,
-          styles: darkMapStyles, // Premium slate-dark layout styling
+          styles: darkMapStyles,
           disableDefaultUI: false,
           zoomControl: true,
           mapTypeControl: false,
@@ -224,42 +142,46 @@ export const GoogleMapsView: React.FC<GoogleMapsViewProps> = ({
         });
 
         infoWindowRef.current = new google.maps.InfoWindow();
-      } else {
-        mapRef.current.setCenter(center);
+
+        // Expose global callback hooks for info-window interactive buttons
+        (window as any).handleAvoidMapIncident = (title: string) => {
+          if (onAvoidIncident) onAvoidIncident(title);
+          infoWindowRef.current.close();
+        };
+        (window as any).handleInsertMapHotspot = (title: string) => {
+          if (onInsertHotspot) onInsertHotspot(title);
+          infoWindowRef.current.close();
+        };
       }
 
       const map = mapRef.current;
       const infoWindow = infoWindowRef.current;
 
-      // Clear existing markers
+      // Clear itinerary markers
       markersRef.current.forEach(m => m.setMap(null));
       markersRef.current = [];
 
-      // Bounds tracker to auto-fit all route coordinates
+      // Clear overlay markers
+      overlayMarkersRef.current.forEach(m => m.setMap(null));
+      overlayMarkersRef.current = [];
+
       const bounds = new google.maps.LatLngBounds();
 
-      // Add markers for unique points (omit the duplicated hotel return point for markers)
-      const uniquePoints = points.slice(0, -1);
-      uniquePoints.forEach((p, idx) => {
-        const markerLatLng = { lat: p.lat, lng: p.lng };
-        bounds.extend(markerLatLng);
+      // Render Itinerary Sequence Markers
+      itineraryPoints.slice(0, -1).forEach((p, idx) => {
+        const latLng = { lat: p.lat, lng: p.lng };
+        bounds.extend(latLng);
 
-        // Marker color codes: Hotel=Blue, Dining=Orange, Sights=Purple
-        let markerColor = '#8a4bf1'; // Purple
-        if (p.type.includes('Hotel')) markerColor = '#06b6d4'; // Cyan
-        if (p.type.includes('Dining') || p.type.includes('Breakfast') || p.type.includes('Lunch') || p.type.includes('Dinner')) {
-          markerColor = '#ec4899'; // Pink/Rose
-        }
-
-        // Custom label index representing chronological visit order
-        const labelText = (idx + 1).toString();
+        let markerColor = '#8a4bf1';
+        if (p.type.includes('Hotel')) markerColor = '#06b6d4';
+        if (p.type.includes('Lunch') || p.type.includes('Dinner') || p.type.includes('Breakfast')) markerColor = '#ec4899';
 
         const marker = new google.maps.Marker({
-          position: markerLatLng,
+          position: latLng,
           map,
           title: p.name,
           label: {
-            text: labelText,
+            text: (idx + 1).toString(),
             color: '#ffffff',
             fontWeight: 'bold',
             fontSize: '12px'
@@ -274,33 +196,81 @@ export const GoogleMapsView: React.FC<GoogleMapsViewProps> = ({
           }
         });
 
-        // Add click listener
         marker.addListener('click', () => {
           setActiveMarkerId(p.id);
-          const contentString = `
+          const infoContent = `
             <div style="color: #1a1a24; font-family: sans-serif; padding: 6px; max-width: 220px;">
               <h4 style="margin: 0 0 4px 0; color: #8a4bf1; font-weight: 700;">${p.name}</h4>
-              <p style="font-size: 0.72rem; text-transform: uppercase; font-weight: 600; color: #64748b; margin: 0 0 6px 0;">${p.type}</p>
-              <p style="font-size: 0.8rem; margin: 0 0 8px 0; line-height: 1.3;">${p.description}</p>
-              ${p.cost > 0 ? `<div style="font-weight: bold; font-size: 0.8rem;">Cost: $${p.cost}</div>` : '<div style="color: #16a34a; font-weight: bold; font-size: 0.8rem;">Free Entry</div>'}
+              <p style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; color: #64748b; margin: 0 0 6px 0;">${p.type}</p>
+              <p style="font-size: 0.8rem; margin: 0 0 8px 0; line-height: 1.3;">${p.desc}</p>
             </div>
           `;
-          infoWindow.setContent(contentString);
+          infoWindow.setContent(infoContent);
           infoWindow.open(map, marker);
         });
 
         markersRef.current.push(marker);
       });
 
-      // Fit map view bounds
+      // Render Incident & Hotspot Overlays Markers
+      cityOverlays.forEach(ol => {
+        const latLng = { lat: ol.lat, lng: ol.lng };
+        bounds.extend(latLng);
+
+        let iconSymbol = google.maps.SymbolPath.BACKWARD_CLOSED_ARROW;
+        let color = '#f59e0b'; // Hotspot gold
+
+        if (ol.category === 'incident') {
+          color = '#ef4444'; // Red
+          iconSymbol = google.maps.SymbolPath.FORWARD_CLOSED_ARROW;
+        } else if (ol.category === 'cultural') {
+          color = '#06b6d4'; // Cyan
+        }
+
+        const marker = new google.maps.Marker({
+          position: latLng,
+          map,
+          title: ol.title,
+          icon: {
+            path: iconSymbol,
+            fillColor: color,
+            fillOpacity: 0.9,
+            strokeColor: '#ffffff',
+            strokeWeight: 1,
+            scale: 7
+          }
+        });
+
+        marker.addListener('click', () => {
+          setActiveMarkerId(ol.id);
+          
+          // Action button in InfoWindow
+          const actionBtn = ol.category === 'incident'
+            ? `<button onclick="window.handleAvoidMapIncident('${ol.title}')" style="background-color:#ef4444; color:white; border:none; padding:4px 8px; border-radius:4px; font-size:0.75rem; font-weight:bold; cursor:pointer; width:100%; margin-top:8px;">⚠️ Reroute Around Incident</button>`
+            : `<button onclick="window.handleInsertMapHotspot('${ol.title}')" style="background-color:#8a4bf1; color:white; border:none; padding:4px 8px; border-radius:4px; font-size:0.75rem; font-weight:bold; cursor:pointer; width:100%; margin-top:8px;">⭐ Add to Itinerary</button>`;
+
+          const infoContent = `
+            <div style="color: #1a1a24; font-family: sans-serif; padding: 6px; max-width: 220px;">
+              <h4 style="margin: 0 0 4px 0; color: ${color}; font-weight: 700;">${ol.title}</h4>
+              <p style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; color: #64748b; margin: 0 0 6px 0;">Live operations overlay</p>
+              <p style="font-size: 0.8rem; margin: 0 0 4px 0; line-height: 1.3;">${ol.desc}</p>
+              ${actionBtn}
+            </div>
+          `;
+          infoWindow.setContent(infoContent);
+          infoWindow.open(map, marker);
+        });
+
+        overlayMarkersRef.current.push(marker);
+      });
+
+      // Fit map bounds
       map.fitBounds(bounds);
 
-      // Draw Polyline route tracks
-      if (polylineRef.current) {
-        polylineRef.current.setMap(null);
-      }
-
-      const pathCoordinates = points.map(p => ({ lat: p.lat, lng: p.lng }));
+      // Render polyline route path
+      if (polylineRef.current) polylineRef.current.setMap(null);
+      
+      const pathCoordinates = itineraryPoints.map(p => ({ lat: p.lat, lng: p.lng }));
       polylineRef.current = new google.maps.Polyline({
         path: pathCoordinates,
         geodesic: true,
@@ -310,29 +280,32 @@ export const GoogleMapsView: React.FC<GoogleMapsViewProps> = ({
         map
       });
 
-      logger.info('Google Maps initialized successfully.', { destinationId, cityName });
     } catch (err: any) {
-      setMapError(`Map configuration error: ${err.message || err}`);
-      logger.error('Google Maps Init Error:', err);
+      setMapError(`Map error: ${err.message || err}`);
     }
-  }, [mapLoaded, points, destinationId]);
+  }, [mapLoaded, itineraryPoints, cityOverlays, destinationId]);
 
-  // Accessibility helper: trigger click handler programmatically for screen reader users
-  const handleKeyboardFocusMarker = (id: string, index: number) => {
+  const handleKeyboardFocusMarker = (id: string, index: number, isOverlay = false) => {
     setActiveMarkerId(id);
-    if (markersRef.current[index] && infoWindowRef.current && mapRef.current) {
-      const marker = markersRef.current[index];
-      const p = points[index];
-      const google = (window as any).google;
-      
+    const marker = isOverlay ? overlayMarkersRef.current[index] : markersRef.current[index];
+    if (marker && infoWindowRef.current && mapRef.current) {
       mapRef.current.panTo(marker.getPosition());
       
+      const p = isOverlay ? cityOverlays[index] : itineraryPoints[index];
+      const color = isOverlay ? (p.category === 'incident' ? '#ef4444' : '#f59e0b') : '#8a4bf1';
+      
+      const actionBtn = isOverlay 
+        ? (p.category === 'incident'
+          ? `<button onclick="window.handleAvoidMapIncident('${p.title}')" style="background-color:#ef4444; color:white; border:none; padding:4px 8px; border-radius:4px; font-size:0.75rem; font-weight:bold; cursor:pointer; width:100%; margin-top:8px;">⚠️ Reroute Around Incident</button>`
+          : `<button onclick="window.handleInsertMapHotspot('${p.title}')" style="background-color:#8a4bf1; color:white; border:none; padding:4px 8px; border-radius:4px; font-size:0.75rem; font-weight:bold; cursor:pointer; width:100%; margin-top:8px;">⭐ Add to Itinerary</button>`)
+        : '';
+
       const contentString = `
         <div style="color: #1a1a24; font-family: sans-serif; padding: 6px; max-width: 220px;">
-          <h4 style="margin: 0 0 4px 0; color: #8a4bf1; font-weight: 700;">${p.name}</h4>
-          <p style="font-size: 0.72rem; text-transform: uppercase; font-weight: 600; color: #64748b; margin: 0 0 6px 0;">${p.type}</p>
-          <p style="font-size: 0.8rem; margin: 0 0 8px 0; line-height: 1.3;">${p.description}</p>
-          ${p.cost > 0 ? `<div style="font-weight: bold; font-size: 0.8rem;">Cost: $${p.cost}</div>` : '<div style="color: #16a34a; font-weight: bold; font-size: 0.8rem;">Free Entry</div>'}
+          <h4 style="margin: 0 0 4px 0; color: ${color}; font-weight: 700;">${p.name || p.title}</h4>
+          <p style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; color: #64748b; margin: 0 0 6px 0;">${p.type || 'Overlay Node'}</p>
+          <p style="font-size: 0.8rem; margin: 0 0 4px 0; line-height: 1.3;">${p.desc}</p>
+          ${actionBtn}
         </div>
       `;
       infoWindowRef.current.setContent(contentString);
@@ -367,41 +340,68 @@ export const GoogleMapsView: React.FC<GoogleMapsViewProps> = ({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-      {/* Keyboard navigation helper list for WCAG 2.1 AA screen readers */}
+      {/* Keyboard accessibility index listing planned route and city alerts */}
       <div 
         aria-label="Route landmarks index" 
         style={{ 
           display: 'flex', 
-          flexWrap: 'wrap', 
+          flexDirection: 'column',
           gap: '8px', 
-          padding: '8px', 
+          padding: '12px', 
           backgroundColor: '#12121a', 
           borderRadius: '8px',
           border: '1px solid #232330'
         }}
       >
-        <span style={{ fontSize: '0.78rem', color: '#85859e', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <Compass style={{ width: '14px', height: '14px' }} /> Keyboard Index:
-        </span>
-        {points.slice(0, -1).map((p, idx) => (
-          <button
-            key={`a11y-marker-${p.id}`}
-            onClick={() => handleKeyboardFocusMarker(p.id, idx)}
-            style={{
-              padding: '4px 10px',
-              fontSize: '0.75rem',
-              backgroundColor: activeMarkerId === p.id ? '#8a4bf1' : '#1e1e2f',
-              border: `1px solid ${activeMarkerId === p.id ? '#a855f7' : '#3c3c54'}`,
-              color: '#ffffff',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              outline: 'none'
-            }}
-            aria-label={`Highlight position ${idx + 1}: ${p.name} (${p.type})`}
-          >
-            {idx + 1}. {p.name}
-          </button>
-        ))}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
+          <span style={{ fontSize: '0.78rem', color: '#85859e', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <Compass style={{ width: '14px', height: '14px' }} /> Route Nodes:
+          </span>
+          {itineraryPoints.slice(0, -1).map((p, idx) => (
+            <button
+              key={`a11y-marker-${p.id}`}
+              onClick={() => handleKeyboardFocusMarker(p.id, idx, false)}
+              style={{
+                padding: '4px 10px',
+                fontSize: '0.75rem',
+                backgroundColor: activeMarkerId === p.id ? '#8a4bf1' : '#1e1e2f',
+                border: `1px solid ${activeMarkerId === p.id ? '#a855f7' : '#3c3c54'}`,
+                color: '#ffffff',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                outline: 'none'
+              }}
+              aria-label={`Highlight position ${idx + 1}: ${p.name} (${p.type})`}
+            >
+              {idx + 1}. {p.name}
+            </button>
+          ))}
+        </div>
+
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center', borderTop: '1px solid #232330', paddingTop: '8px' }}>
+          <span style={{ fontSize: '0.78rem', color: '#85859e', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <AlertCircle style={{ width: '14px', height: '14px' }} /> City Alerts & Discoveries:
+          </span>
+          {cityOverlays.map((ol, idx) => (
+            <button
+              key={`a11y-overlay-${ol.id}`}
+              onClick={() => handleKeyboardFocusMarker(ol.id, idx, true)}
+              style={{
+                padding: '4px 10px',
+                fontSize: '0.75rem',
+                backgroundColor: activeMarkerId === ol.id ? (ol.category === 'incident' ? '#ef4444' : '#f59e0b') : '#1e1e2f',
+                border: `1px solid ${activeMarkerId === ol.id ? '#ffffff' : (ol.category === 'incident' ? '#ef4444' : '#f59e0b')}`,
+                color: '#ffffff',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                outline: 'none'
+              }}
+              aria-label={`Inspect ${ol.title} (${ol.category})`}
+            >
+              {ol.category === 'incident' ? '🚨' : '📍'} {ol.title}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div style={{ position: 'relative', width: '100%', height: '420px', borderRadius: '12px', overflow: 'hidden', border: '1px solid #232330' }}>
@@ -435,7 +435,7 @@ export const GoogleMapsView: React.FC<GoogleMapsViewProps> = ({
                 100% { transform: rotate(360deg); }
               }
             `}</style>
-            <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Loading Google Maps Platform...</span>
+            <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Loading Google Maps...</span>
           </div>
         )}
         <div ref={mapContainerRef} style={{ width: '100%', height: '100%', minHeight: '400px' }} />
@@ -444,69 +444,20 @@ export const GoogleMapsView: React.FC<GoogleMapsViewProps> = ({
   );
 };
 
-// Premium dark-mode slate map theme styling styles
 const darkMapStyles = [
   { elementType: "geometry", stylers: [{ color: "#1d2027" }] },
   { elementType: "labels.text.stroke", stylers: [{ color: "#1d2027" }] },
   { elementType: "labels.text.fill", stylers: [{ color: "#8b939e" }] },
-  {
-    featureType: "administrative.locality",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#c18bf2" }]
-  },
-  {
-    featureType: "poi",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#c18bf2" }]
-  },
-  {
-    featureType: "poi.park",
-    elementType: "geometry",
-    stylers: [{ color: "#13271f" }]
-  },
-  {
-    featureType: "poi.park",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#548c71" }]
-  },
-  {
-    featureType: "road",
-    elementType: "geometry",
-    stylers: [{ color: "#2d333f" }]
-  },
-  {
-    featureType: "road",
-    elementType: "geometry.stroke",
-    stylers: [{ color: "#222731" }]
-  },
-  {
-    featureType: "road",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#85939e" }]
-  },
-  {
-    featureType: "road.highway",
-    elementType: "geometry",
-    stylers: [{ color: "#3a4454" }]
-  },
-  {
-    featureType: "road.highway",
-    elementType: "geometry.stroke",
-    stylers: [{ color: "#29313d" }]
-  },
-  {
-    featureType: "road.highway",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#a8b5c2" }]
-  },
-  {
-    featureType: "water",
-    elementType: "geometry",
-    stylers: [{ color: "#0c1524" }]
-  },
-  {
-    featureType: "water",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#334f77" }]
-  }
+  { featureType: "administrative.locality", elementType: "labels.text.fill", stylers: [{ color: "#c18bf2" }] },
+  { featureType: "poi", elementType: "labels.text.fill", stylers: [{ color: "#c18bf2" }] },
+  { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#13271f" }] },
+  { featureType: "poi.park", elementType: "labels.text.fill", stylers: [{ color: "#548c71" }] },
+  { featureType: "road", elementType: "geometry", stylers: [{ color: "#2d333f" }] },
+  { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#222731" }] },
+  { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#85939e" }] },
+  { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#3a4454" }] },
+  { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#29313d" }] },
+  { featureType: "road.highway", elementType: "labels.text.fill", stylers: [{ color: "#a8b5c2" }] },
+  { featureType: "water", elementType: "geometry", stylers: [{ color: "#0c1524" }] },
+  { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#334f77" }] }
 ];
