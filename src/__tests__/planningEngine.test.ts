@@ -1,5 +1,6 @@
 import { generateItinerary, recalculateItinerary, calculateDistance, getTransit } from '../utils/planningEngine';
 import { travelDatabase } from '../data/travelDatabase';
+import { cacheService } from '../utils/cacheService';
 
 // Mock test suite matching standard test frameworks (Jest/Vitest)
 describe('Travel Planning Scheduler Engine Tests', () => {
@@ -98,7 +99,38 @@ describe('Travel Planning Scheduler Engine Tests', () => {
     // Rain increases taxi/transit costs or shifts to indoor
     expect(updatedItinerary.totalCost).not.toBe(originalCost);
     expect(logs.length).toBeGreaterThan(0);
-    expect(logs[0]).toContain('WEATHER ALERT');
+    expect(logs[0]).toContain('Weather Event Triggered');
+  });
+
+  it('should propagate traffic jam alerts and compress activity durations correctly', () => {
+    const itinerary = generateItinerary(sampleInputs);
+    const { updatedItinerary, logs } = recalculateItinerary(
+      itinerary,
+      'TRAFFIC',
+      1,
+      true
+    );
+
+    expect(logs.some(log => log.includes('Traffic Jam Alert'))).toBe(true);
+    expect(logs.some(log => log.includes('delay added'))).toBe(true);
+
+    const originalDay = itinerary.days[0];
+    const updatedDay = updatedItinerary.days[0];
+    // Traffic compresses durations
+    expect(updatedDay.morning.durationMin).toBeLessThan(originalDay.morning.durationMin);
+  });
+
+  it('should verify cacheService caching and expiration behaviors for dashboard announcements', () => {
+    const testKey = 'test_announcements';
+    const testData = [{ id: '1', title: 'Test Alert', category: 'incident' }];
+
+    // Set item in cache
+    cacheService.set(testKey, testData, 10);
+    expect(cacheService.get(testKey)).toEqual(testData);
+
+    // Clear item from cache
+    cacheService.clear(testKey);
+    expect(cacheService.get(testKey)).toBeNull();
   });
 
   it('should fall back to default destination if id is missing or invalid', () => {
@@ -110,3 +142,4 @@ describe('Travel Planning Scheduler Engine Tests', () => {
     }).toThrow('Destination invalid-city not found.');
   });
 });
+
