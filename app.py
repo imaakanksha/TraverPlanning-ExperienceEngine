@@ -55,7 +55,7 @@ st.markdown("""
         margin-right: 4px;
     }
 </style>
-""", unsafe_allowed_code_html=True)
+""", unsafe_allow_html=True)
 
 # Initialize Session State
 if 'itinerary' not in st.session_state:
@@ -211,7 +211,7 @@ else:
                 st.markdown(f"""
                 <div style="padding: 16px; border-radius: 8px; margin-bottom: 12px; {border_css}">
                     <span style="color: #8a4bf1; font-weight: 700; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">{slot_title}</span>
-                """, unsafe_allowed_code_html=True)
+                """, unsafe_allow_html=True)
                 
                 col_c1, col_c2 = st.columns([4, 1])
                 
@@ -221,7 +221,7 @@ else:
                         st.markdown(f"#### 🍴 {rest['name']}")
                         st.write(rest['description'])
                         diets_str = " ".join([f"<span class='badge-label'>{f}</span>" for f in rest['dietary_flags']])
-                        st.markdown(diets_str, unsafe_allowed_code_html=True)
+                        st.markdown(diets_str, unsafe_allow_html=True)
                     with col_c2:
                         st.write(f"**Est. Price:** ${rest['cost_approx']}")
                 else:
@@ -233,7 +233,7 @@ else:
                         <span class="badge-label" style="color: #c084fc;">{act['category']}</span>
                         <span class="badge-label">{act['intensity']} Intensity</span>
                         <span class="badge-label">{'Indoor' if act['is_indoor'] else 'Outdoor'}</span>
-                        """, unsafe_allowed_code_html=True)
+                        """, unsafe_allow_html=True)
                         if act['tips']:
                             st.info(f"💡 Tip: {act['tips']}")
                     with col_c2:
@@ -261,7 +261,7 @@ else:
                                     st.rerun()
                                     
                 # Transit block
-                st.markdown("</div>", unsafe_allowed_code_html=True)
+                st.markdown("</div>", unsafe_allow_html=True)
                 transit = slot_data.get('transit_to_next')
                 if transit:
                     st.markdown(f"""
@@ -269,7 +269,7 @@ else:
                         🚘 Travel: <strong>{transit['duration_min']} mins</strong> via <strong>{transit['mode']}</strong> 
                         {f' (Est. ${transit["cost_approx"]})' if transit['cost_approx'] > 0 else ' (Free)'}
                     </div>
-                    """, unsafe_allowed_code_html=True)
+                    """, unsafe_allow_html=True)
 
     with tab_map:
         st.subheader("📍 Dynamic Route Map Overlay")
@@ -353,7 +353,7 @@ else:
                 <span style="font-size: 0.75rem; text-transform: uppercase; color: #85859e; font-weight: 700; letter-spacing: 0.05em;">Current Window Status</span>
                 <h3 style="color: #ec4899; margin: 8px 0;">Day {st.session_state.active_day} — {st.session_state.sim_time_slot.capitalize()}</h3>
             </div>
-            """, unsafe_allowed_code_html=True)
+            """, unsafe_allow_html=True)
             
             col_ctrl1, col_ctrl2 = st.columns(2)
             if col_ctrl1.button("▶️ Start Simulation" if not st.session_state.is_simulating else "⏸️ Pause Simulation", use_container_width=True):
@@ -495,7 +495,7 @@ else:
                     <img src="{day['morning']['activity']['image_url']}" style="width:100%; height:120px; object-fit:cover; border-radius:2px;"/>
                     <div class="polaroid-label">🎭 {day['morning']['activity']['name'][:16]}...</div>
                 </div>
-                """, unsafe_allowed_code_html=True)
+                """, unsafe_allow_html=True)
                 
             with col_snap2:
                 st.markdown(f"""
@@ -503,7 +503,7 @@ else:
                     <img src="{day['afternoon']['activity']['image_url']}" style="width:100%; height:120px; object-fit:cover; border-radius:2px;"/>
                     <div class="polaroid-label">🎭 {day['afternoon']['activity']['name'][:16]}...</div>
                 </div>
-                """, unsafe_allowed_code_html=True)
+                """, unsafe_allow_html=True)
 
         with col_j2:
             st.subheader("🏆 Simulation Achievements Stamps")
@@ -532,4 +532,4 @@ else:
                         <p style="margin:0; font-size:0.75rem; color:#85859e;">{s['desc']}</p>
                     </div>
                 </div>
-                """, unsafe_allowed_code_html=True)
+                """, unsafe_allow_html=True)
