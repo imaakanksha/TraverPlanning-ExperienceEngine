@@ -3,7 +3,7 @@ import pandas as pd
 import altair as alt
 import pydeck as pdk
 from travel_db import travel_database, simulator_events
-from scheduler import generate_itinerary, recalculate_itinerary, haversine_distance, get_transit
+from scheduler import generate_itinerary, recalculate_itinerary, haversine_distance, get_transit, recalculate_day_transits, calculate_total_cost
 
 # Page configuration
 st.set_page_config(
