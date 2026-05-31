@@ -1,0 +1,285 @@
+.journalLayout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+}
+
+@media (min-width: 1024px) {
+  .journalLayout {
+    grid-template-columns: 3fr 2fr;
+  }
+}
+
+.notepadCard {
+  padding: 1.75rem;
+  background: var(--bg-glass);
+  border: 1px solid hsl(var(--border-primary));
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  box-shadow: var(--shadow-glass);
+}
+
+.sideColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid hsl(var(--border-primary));
+  padding-bottom: 1rem;
+}
+
+.cardTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.cardTitle h3 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: hsl(var(--text-primary));
+}
+
+.bookIcon {
+  color: hsl(var(--accent-primary));
+}
+
+.logTag {
+  background: hsl(var(--bg-secondary));
+  border: 1px solid hsl(var(--border-primary));
+  color: hsl(var(--text-secondary));
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+/* Day selector row */
+.daySelector {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.dayBtn {
+  background: transparent;
+  border: 1px solid hsl(var(--border-primary));
+  color: hsl(var(--text-secondary));
+  padding: 0.4rem 0.85rem;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-display);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.dayBtn:hover {
+  background: hsl(var(--bg-secondary));
+  color: hsl(var(--text-primary));
+}
+
+.activeDayBtn {
+  background: hsl(var(--accent-primary) / 0.1);
+  color: hsl(var(--accent-primary));
+  border-color: hsl(var(--accent-primary));
+}
+
+.noteAreaWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.journalTextarea {
+  width: 100%;
+  height: 240px;
+  background: hsl(var(--bg-secondary) / 0.5);
+  border: 1px solid hsl(var(--border-primary));
+  color: hsl(var(--text-primary));
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  resize: none;
+  outline: none;
+  transition: border-color var(--transition-fast);
+}
+
+.journalTextarea:focus {
+  border-color: hsl(var(--accent-primary));
+}
+
+/* Stamps layout card */
+.stampsCard, .snapsCard {
+  padding: 1.5rem;
+  background: var(--bg-glass);
+  border: 1px solid hsl(var(--border-primary));
+}
+
+.sideTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: hsl(var(--text-primary));
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.awardIcon { color: hsl(var(--accent-secondary)); }
+.snapIcon { color: hsl(var(--accent-cyan)); }
+
+.sectionSubtitle {
+  font-size: 0.8rem;
+  color: hsl(var(--text-muted));
+  margin-bottom: 1.25rem;
+}
+
+.stampsGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.stampBadge {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem;
+  border-radius: var(--radius-md);
+  border: 1px solid hsl(var(--border-primary));
+  transition: all var(--transition-fast);
+}
+
+.stampCircle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  background: hsl(var(--bg-secondary));
+  border: 2px solid hsl(var(--border-primary));
+  flex-shrink: 0;
+  transition: all var(--transition-fast);
+}
+
+.stampEmoji {
+  filter: grayscale(1);
+}
+
+.stampDetails h5 {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: hsl(var(--text-muted));
+  margin-bottom: 0.15rem;
+}
+
+.stampDetails p {
+  font-size: 0.75rem;
+  color: hsl(var(--text-muted));
+}
+
+/* Unlocked State */
+.unlockedStamp {
+  background: hsl(var(--accent-primary) / 0.04);
+  border-color: hsl(var(--accent-primary) / 0.3);
+}
+
+.unlockedStamp .stampCircle {
+  border-color: hsl(var(--accent-primary));
+  background: linear-gradient(135deg, hsl(var(--accent-primary) / 0.15), hsl(var(--accent-secondary) / 0.15));
+  box-shadow: 0 0 10px hsl(var(--accent-primary) / 0.2);
+}
+
+.unlockedStamp .stampEmoji {
+  filter: grayscale(0);
+  animation: unlockPulse 1.2s ease-out 1;
+}
+
+.unlockedStamp .stampDetails h5 {
+  color: hsl(var(--text-primary));
+}
+
+.unlockedStamp .stampDetails p {
+  color: hsl(var(--text-secondary));
+}
+
+@keyframes unlockPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.25) rotate(15deg); }
+  100% { transform: scale(1); }
+}
+
+/* Locked State */
+.lockedStamp {
+  opacity: 0.65;
+}
+
+/* Polaroid Sightings Gallery styling */
+.snapsFlex {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.polaroid {
+  background: #ffffff;
+  padding: 0.4rem 0.4rem 0.8rem 0.4rem;
+  border-radius: 4px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+  transform: rotate(-3deg);
+  transition: transform var(--transition-medium);
+}
+
+.polaroid:nth-child(even) {
+  transform: rotate(3deg);
+}
+
+.polaroid:hover {
+  transform: scale(1.05) rotate(0deg);
+  z-index: 10;
+}
+
+.polaroidImageWrapper {
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 2px;
+  background: #f4f4f5;
+}
+
+.polaroidImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.polaroidLabel {
+  text-align: center;
+  padding-top: 0.4rem;
+  color: #18181b;
+}
+
+.polaroidSlot {
+  font-family: var(--font-display);
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: hsl(var(--accent-primary));
+  letter-spacing: 0.05em;
+}
+
+.polaroidCaption {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+  font-size: 0.65rem;
+  line-height: 1.2;
+}

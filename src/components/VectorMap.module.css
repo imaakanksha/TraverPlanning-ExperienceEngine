@@ -1,0 +1,221 @@
+.mapContainer {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-glass);
+  border: 1px solid hsl(var(--border-primary));
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  gap: 1.25rem;
+  box-shadow: var(--shadow-glass);
+}
+
+.mapHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.mapTitleBlock {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: hsl(var(--text-primary));
+}
+
+.mapTitleBlock h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.navIcon {
+  color: hsl(var(--accent-primary));
+}
+
+.cityBadge {
+  background: hsl(var(--bg-secondary));
+  border: 1px solid hsl(var(--border-primary));
+  color: hsl(var(--text-secondary));
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.svgWrapper {
+  background: hsl(var(--bg-secondary) / 0.4);
+  border: 1px solid hsl(var(--border-primary));
+  border-radius: var(--radius-md);
+  padding: 0.5rem;
+  overflow: hidden;
+}
+
+.mapSvg {
+  display: block;
+  max-height: 320px;
+}
+
+/* Route Line styles */
+.routeLine {
+  stroke: hsl(var(--border-primary));
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.65;
+}
+
+.routeLineFlow {
+  stroke: url(#routeGradient);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 8, 12;
+  animation: flowRoute 15s linear infinite;
+}
+
+/* Gradient hack - using HSL values */
+.mapSvg::before {
+  content: "";
+}
+
+@keyframes flowRoute {
+  to {
+    stroke-dashoffset: -200;
+  }
+}
+
+/* SVG Line Gradient definition */
+.mapSvg {
+  background-image: radial-gradient(hsl(var(--border-primary)) 1px, transparent 0);
+  background-size: 20px 20px;
+}
+
+/* Pin styles */
+.pinGroup {
+  cursor: pointer;
+}
+
+.pinText {
+  fill: #ffffff;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 9px;
+  text-anchor: middle;
+}
+
+.pinGlow {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 0;
+  transition: all var(--transition-fast);
+}
+
+.pinGroup:hover .pinGlow {
+  stroke: hsl(var(--accent-primary) / 0.3);
+  stroke-width: 4;
+}
+
+.currentPin .pinGlow {
+  stroke: hsl(var(--accent-secondary) / 0.4);
+  stroke-width: 6;
+  animation: pulsePinGlow 2s infinite;
+}
+
+@keyframes pulsePinGlow {
+  0% { stroke-width: 3; opacity: 0.8; }
+  50% { stroke-width: 8; opacity: 0.3; }
+  100% { stroke-width: 3; opacity: 0.8; }
+}
+
+/* Hover Tooltips on Pins */
+.tooltip {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(5px);
+  transition: all var(--transition-fast);
+}
+
+.pinGroup:hover .tooltip {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Live Simulation Tracker */
+.trackerRadar {
+  fill: hsl(var(--accent-secondary) / 0.2);
+  stroke: hsl(var(--accent-secondary));
+  stroke-width: 1.5;
+  animation: pingRadar 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+.trackerCore {
+  filter: drop-shadow(0 0 6px hsl(var(--accent-secondary)));
+}
+
+@keyframes pingRadar {
+  0% {
+    r: 6;
+    opacity: 1;
+  }
+  100% {
+    r: 24;
+    opacity: 0;
+  }
+}
+
+/* Legend styling */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid hsl(var(--border-primary));
+  font-size: 0.8rem;
+  color: hsl(var(--text-secondary));
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 500;
+}
+
+.legendDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.dotHotel {
+  background: hsl(var(--accent-primary));
+  border: 1px solid #ffffff;
+}
+
+.dotAttraction {
+  background: hsl(var(--accent-cyan));
+  border: 1px solid #ffffff;
+}
+
+.dotDining {
+  background: hsl(var(--accent-secondary));
+  border: 1px solid #ffffff;
+}
+
+.pulseIndicator {
+  width: 8px;
+  height: 8px;
+  background-color: hsl(var(--accent-secondary));
+  border-radius: 50%;
+  animation: pulseIndicatorAnim 1.2s infinite;
+}
+
+.liveLabel {
+  color: hsl(var(--accent-secondary));
+  font-weight: 600;
+}
+
+@keyframes pulseIndicatorAnim {
+  0% { transform: scale(0.85); opacity: 0.5; }
+  50% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(0.85); opacity: 0.5; }
+}

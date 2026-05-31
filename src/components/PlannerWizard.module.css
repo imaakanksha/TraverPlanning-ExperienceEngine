@@ -1,0 +1,336 @@
+.wizardContainer {
+  max-width: 800px;
+  width: 100%;
+  margin: 2rem auto;
+  padding: 2.5rem;
+  background: var(--bg-glass);
+  border: 1px solid hsl(var(--border-primary));
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.wizardHeader {
+  border-bottom: 1px solid hsl(var(--border-primary));
+  padding-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.progressTracker {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.stepIndicator {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: hsl(var(--bg-secondary));
+  border: 2px solid hsl(var(--border-primary));
+  color: hsl(var(--text-muted));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.8rem;
+  transition: all var(--transition-medium);
+}
+
+.activeStep {
+  border-color: hsl(var(--accent-primary));
+  color: hsl(var(--accent-primary));
+}
+
+.currentStep {
+  background: hsl(var(--accent-primary));
+  color: #ffffff;
+  box-shadow: 0 0 10px hsl(var(--accent-primary) / 0.4);
+}
+
+.wizardTitle {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: hsl(var(--text-primary));
+}
+
+.wizardSubtitle {
+  font-size: 0.95rem;
+  color: hsl(var(--text-secondary));
+}
+
+.wizardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* Destination Selector Card Grid */
+.destGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+}
+
+@media (min-width: 640px) {
+  .destGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.destCard {
+  border: 1px solid hsl(var(--border-primary));
+  background: hsl(var(--bg-card) / 0.4);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  cursor: pointer;
+  transition: all var(--transition-medium);
+}
+
+.destCard:hover {
+  transform: translateY(-3px);
+  border-color: hsl(var(--accent-primary) / 0.4);
+  background: hsl(var(--bg-card) / 0.7);
+}
+
+.selectedCard {
+  border-color: hsl(var(--accent-primary));
+  box-shadow: 0 0 20px -5px hsl(var(--accent-primary) / 0.3);
+  background: hsl(var(--bg-card) / 0.9);
+}
+
+.imageWrapper {
+  position: relative;
+  height: 140px;
+  overflow: hidden;
+}
+
+.destImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--transition-slow);
+}
+
+.destCard:hover .destImage {
+  transform: scale(1.05);
+}
+
+.destTag {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  color: #ffffff;
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.destContent {
+  padding: 1rem;
+}
+
+.destContent h3 {
+  font-size: 1.15rem;
+  margin-bottom: 0.35rem;
+  color: hsl(var(--text-primary));
+}
+
+.destContent p {
+  font-size: 0.85rem;
+  color: hsl(var(--text-secondary));
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Form Styles */
+.formGroupGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.inputGroup label {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: hsl(var(--text-primary));
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.rangeSelector {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  background: hsl(var(--bg-secondary));
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--radius-md);
+  border: 1px solid hsl(var(--border-primary));
+}
+
+.rangeSelector input[type="range"] {
+  flex: 1;
+  accent-color: hsl(var(--accent-primary));
+  cursor: pointer;
+}
+
+.rangeValue {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1rem;
+  color: hsl(var(--accent-primary));
+  min-width: 60px;
+}
+
+/* Toggle Option buttons */
+.toggleGroup {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .toggleGroup {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.toggleButton {
+  background: hsl(var(--bg-card) / 0.4);
+  border: 1px solid hsl(var(--border-primary));
+  padding: 1rem;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  transition: all var(--transition-fast);
+}
+
+.toggleButton:hover {
+  background: hsl(var(--bg-card));
+  border-color: hsl(var(--accent-primary) / 0.4);
+}
+
+.activeToggle {
+  border-color: hsl(var(--accent-primary));
+  background: hsl(var(--accent-primary) / 0.08);
+  box-shadow: 0 0 10px hsl(var(--accent-primary) / 0.1) inset;
+}
+
+.btnLabel {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: hsl(var(--text-primary));
+}
+
+.activeToggle .btnLabel {
+  color: hsl(var(--accent-primary));
+}
+
+.btnDesc {
+  font-size: 0.75rem;
+  color: hsl(var(--text-secondary));
+}
+
+/* Pills Multiselect Grid */
+.pillsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 1rem;
+}
+
+.pillsGridRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.pillButton {
+  background: hsl(var(--bg-card) / 0.4);
+  border: 1px solid hsl(var(--border-primary));
+  color: hsl(var(--text-secondary));
+  padding: 0.75rem 1.25rem;
+  border-radius: 40px;
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  transition: all var(--transition-fast);
+}
+
+.pillButton:hover {
+  border-color: hsl(var(--accent-primary) / 0.5);
+  color: hsl(var(--text-primary));
+  background: hsl(var(--bg-card));
+}
+
+.activePill {
+  background: linear-gradient(135deg, hsl(var(--accent-primary) / 0.15), hsl(var(--accent-secondary) / 0.15));
+  border-color: hsl(var(--accent-primary));
+  color: hsl(var(--accent-primary));
+}
+
+.wizardSelect {
+  width: 100%;
+  background: hsl(var(--bg-card));
+  color: hsl(var(--text-primary));
+  border: 1px solid hsl(var(--border-primary));
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  cursor: pointer;
+  outline: none;
+  transition: border-color var(--transition-fast);
+}
+
+.wizardSelect:focus {
+  border-color: hsl(var(--accent-primary));
+}
+
+.wizardAlert {
+  background: hsl(var(--bg-secondary));
+  border: 1px solid hsl(var(--border-primary));
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: hsl(var(--text-secondary));
+  font-size: 0.85rem;
+}
+
+/* Wizard footer buttons */
+.wizardActions {
+  display: flex;
+  margin-top: 1rem;
+  border-top: 1px solid hsl(var(--border-primary));
+  padding-top: 1.5rem;
+}

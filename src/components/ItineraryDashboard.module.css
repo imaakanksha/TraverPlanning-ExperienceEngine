@@ -1,0 +1,415 @@
+.timelineColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.mapColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Summary Banner styling */
+.summaryBanner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, hsl(var(--accent-primary) / 0.1), hsl(var(--accent-secondary) / 0.05));
+  border: 1px solid hsl(var(--border-primary));
+}
+
+.bannerInfo h2 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin-bottom: 0.25rem;
+}
+
+.summaryBadges {
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: hsl(var(--text-secondary));
+  font-weight: 500;
+}
+
+.bannerCost {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+}
+
+.costLabel {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: hsl(var(--text-muted));
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.costVal {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 800;
+  color: hsl(var(--accent-primary));
+}
+
+/* Day Selector tabs */
+.dayTabs {
+  display: flex;
+  gap: 0.5rem;
+  border-bottom: 1px solid hsl(var(--border-primary));
+  padding-bottom: 0.5rem;
+}
+
+.dayTabBtn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: hsl(var(--text-muted));
+  font-family: var(--font-display);
+  font-weight: 700;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.dayTabBtn:hover {
+  color: hsl(var(--text-primary));
+  background: hsl(var(--bg-secondary));
+}
+
+.activeDayTab {
+  color: hsl(var(--accent-primary));
+  background: hsl(var(--accent-primary) / 0.08);
+  border-color: hsl(var(--accent-primary) / 0.3);
+}
+
+/* Card slot styling */
+.slotItem {
+  margin-bottom: 0.5rem;
+}
+
+.slotCard {
+  background: hsl(var(--bg-card) / 0.3);
+  border-color: hsl(var(--border-primary));
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+}
+
+.activeCard {
+  border-color: hsl(var(--accent-secondary));
+  box-shadow: 0 0 15px hsl(var(--accent-secondary) / 0.15);
+  background: hsl(var(--bg-card) / 0.75);
+}
+
+.diningCard {
+  border-left: 3px solid hsl(var(--accent-secondary) / 0.6);
+}
+
+.slotTime {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: hsl(var(--text-muted));
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 0.5rem;
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.titleArea {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.titleArea h4 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: hsl(var(--text-primary));
+}
+
+.badgeRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.intensityBadge {
+  background: hsl(var(--bg-secondary));
+  color: hsl(var(--text-secondary));
+  border: 1px solid hsl(var(--border-primary));
+}
+
+.indoorBadge {
+  background: rgba(6, 182, 212, 0.12);
+  color: #22d3ee;
+  border: 1px solid rgba(6, 182, 212, 0.2);
+}
+
+.outdoorBadge {
+  background: rgba(234, 179, 8, 0.12);
+  color: #facc15;
+  border: 1px solid rgba(234, 179, 8, 0.2);
+}
+
+.swapBtn {
+  margin-top: -2px;
+}
+
+.slotDescription {
+  font-size: 0.88rem;
+  color: hsl(var(--text-secondary));
+  margin-bottom: 1rem;
+}
+
+.cardFooter {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+}
+
+.footerDetail {
+  color: hsl(var(--text-secondary));
+}
+
+.footerDetail strong {
+  color: hsl(var(--text-primary));
+}
+
+.tipsBox {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  background: hsl(var(--accent-primary) / 0.06);
+  border: 1px solid hsl(var(--accent-primary) / 0.15);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-sm);
+  color: hsl(var(--text-secondary));
+  font-size: 0.8rem;
+}
+
+.tipsIcon {
+  color: hsl(var(--accent-primary));
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+/* Dining specific tags */
+.diningTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: hsl(var(--text-primary));
+  font-size: 1.1rem;
+}
+
+.priceScale {
+  display: inline-flex;
+  gap: 1px;
+}
+
+.activeDollar {
+  color: hsl(var(--accent-secondary));
+}
+
+/* Transit connector spacing override */
+.transitConnector {
+  border-left: 2px dashed hsl(var(--border-primary));
+  margin-left: 5px;
+}
+
+/* Lodging Info panel styling */
+.hotelPanel {
+  padding: 1.25rem;
+  background: var(--bg-glass);
+}
+
+.panelTitle {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+  border-bottom: 1px solid hsl(var(--border-primary));
+  padding-bottom: 0.5rem;
+  color: hsl(var(--text-primary));
+}
+
+.hotelInfo {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.5rem;
+}
+
+.ratingStars {
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  margin-top: 0.25rem;
+}
+
+.starFilled { color: #facc15; }
+.starEmpty { color: hsl(var(--border-primary)); }
+.ratingVal {
+  color: hsl(var(--text-muted));
+  margin-left: 4px;
+}
+
+.hotelPrice {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: hsl(var(--accent-primary));
+}
+
+.hotelPrice span {
+  font-size: 0.75rem;
+  color: hsl(var(--text-muted));
+  font-weight: 500;
+}
+
+.hotelDesc {
+  font-size: 0.82rem;
+  color: hsl(var(--text-secondary));
+}
+
+/* Overlay Swapper modal */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.modalContent {
+  max-width: 600px;
+  width: 100%;
+  max-height: 80vh;
+  background: var(--bg-glass);
+  padding: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  overflow: hidden;
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid hsl(var(--border-primary));
+  padding-bottom: 0.75rem;
+}
+
+.closeModal {
+  background: transparent;
+  border: none;
+  color: hsl(var(--text-muted));
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+.closeModal:hover {
+  color: hsl(var(--text-primary));
+}
+
+.modalSubtitle {
+  font-size: 0.88rem;
+  color: hsl(var(--text-secondary));
+}
+
+.alternativesList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.emptyState {
+  padding: 2rem;
+  text-align: center;
+  color: hsl(var(--text-muted));
+}
+
+.altCard {
+  display: flex;
+  gap: 1rem;
+  cursor: pointer;
+  padding: 0.75rem;
+}
+
+.altCard:hover {
+  border-color: hsl(var(--accent-primary));
+}
+
+.altImageWrapper {
+  width: 90px;
+  height: 90px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.altImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.altInfo {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.altHeaderRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.25rem;
+}
+
+.altHeaderRow h5 {
+  font-size: 0.95rem;
+  color: hsl(var(--text-primary));
+}
+
+.altDesc {
+  font-size: 0.78rem;
+  color: hsl(var(--text-secondary));
+  margin-bottom: auto;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.altMeta {
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.72rem;
+  color: hsl(var(--text-muted));
+  font-weight: 500;
+  margin-top: 0.5rem;
+}

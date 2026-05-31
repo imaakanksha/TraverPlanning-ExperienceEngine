@@ -1,0 +1,289 @@
+.simulatorGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+}
+
+@media (min-width: 1024px) {
+  .simulatorGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.controlPanel, .consolePanel {
+  padding: 1.75rem;
+  background: var(--bg-glass);
+  border: 1px solid hsl(var(--border-primary));
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  box-shadow: var(--shadow-glass);
+}
+
+.panelHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid hsl(var(--border-primary));
+  padding-bottom: 1rem;
+}
+
+.panelTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.panelTitle h3 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: hsl(var(--text-primary));
+}
+
+.livePulse {
+  width: 10px;
+  height: 10px;
+  background-color: hsl(var(--text-muted));
+  border-radius: 50%;
+  transition: all var(--transition-fast);
+}
+
+.pulseActive {
+  background-color: hsl(var(--success));
+  box-shadow: 0 0 10px hsl(var(--success) / 0.8);
+  animation: pulsePulse 1.5s infinite;
+}
+
+@keyframes pulsePulse {
+  0% { transform: scale(0.85); opacity: 0.6; }
+  50% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(0.85); opacity: 0.6; }
+}
+
+.timeTag {
+  background: hsl(var(--bg-secondary));
+  border: 1px solid hsl(var(--border-primary));
+  color: hsl(var(--text-secondary));
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+/* Clock / Timebox style */
+.clockDisplay {
+  background: hsl(var(--bg-secondary) / 0.6);
+  border: 1px solid hsl(var(--border-primary));
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  text-align: center;
+}
+
+.activeSlotLabel {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: hsl(var(--text-muted));
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.25rem;
+}
+
+.activeSlotName {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: hsl(var(--accent-primary));
+}
+
+.simulationControls {
+  display: flex;
+  gap: 1rem;
+}
+
+.simulationControls button {
+  flex: 1;
+  justify-content: center;
+}
+
+/* Disruption panels */
+.eventGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  border-top: 1px solid hsl(var(--border-primary));
+  padding-top: 1.25rem;
+}
+
+.eventGrid h4 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: hsl(var(--text-primary));
+}
+
+.sectionSubtitle {
+  font-size: 0.8rem;
+  color: hsl(var(--text-muted));
+}
+
+.eventButtons {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .eventButtons {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.eventBtn {
+  background: hsl(var(--bg-card) / 0.4);
+  border: 1px solid hsl(var(--border-primary));
+  border-radius: var(--radius-md);
+  padding: 0.85rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-align: left;
+  transition: all var(--transition-fast);
+}
+
+.eventBtn:hover {
+  background: hsl(var(--bg-card));
+  border-color: hsl(var(--accent-primary) / 0.4);
+}
+
+.btnIconArea {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  background: hsl(var(--bg-secondary));
+  color: hsl(var(--text-secondary));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+}
+
+.btnTextArea {
+  display: flex;
+  flex-direction: column;
+}
+
+.btnTextArea strong {
+  font-size: 0.85rem;
+  color: hsl(var(--text-primary));
+}
+
+.btnTextArea span {
+  font-size: 0.72rem;
+  color: hsl(var(--text-muted));
+}
+
+/* Event states triggers color overrides */
+.eventBtnActive {
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.15);
+}
+
+.weatherActive {
+  border-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.08);
+}
+.weatherActive .btnIconArea { background: #3b82f6; color: #ffffff; }
+.weatherActive .btnTextArea strong { color: #60a5fa; }
+.weatherActive .btnTextArea span { color: #93c5fd; }
+
+.trafficActive {
+  border-color: #f97316;
+  background: rgba(249, 115, 22, 0.08);
+}
+.trafficActive .btnIconArea { background: #f97316; color: #ffffff; }
+.trafficActive .btnTextArea strong { color: #fb923c; }
+.trafficActive .btnTextArea span { color: #fdbb2d; }
+
+.crowdActive {
+  border-color: #eab308;
+  background: rgba(234, 179, 8, 0.08);
+}
+.crowdActive .btnIconArea { background: #eab308; color: #000000; }
+.crowdActive .btnTextArea strong { color: #facc15; }
+.crowdActive .btnTextArea span { color: #fef08a; }
+
+.budgetActive {
+  border-color: #10b981;
+  background: rgba(16, 185, 129, 0.08);
+}
+.budgetActive .btnIconArea { background: #10b981; color: #ffffff; }
+.budgetActive .btnTextArea strong { color: #34d399; }
+.budgetActive .btnTextArea span { color: #a7f3d0; }
+
+
+/* Execution log styling */
+.terminalIcon {
+  color: hsl(var(--accent-secondary));
+}
+
+.clearLogs {
+  background: transparent;
+  border: none;
+  color: hsl(var(--text-muted));
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+
+.clearLogs:hover {
+  color: hsl(var(--text-primary));
+}
+
+.terminalBody {
+  background: #09090b;
+  border: 1px solid hsl(var(--border-primary));
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  height: 320px;
+  overflow-y: auto;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.82rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  position: relative;
+}
+
+.logRow {
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.logAlert { color: #fb923c; }
+.logAction { color: #a78bfa; }
+.logSuccess { color: #34d399; }
+.logNeutral { color: hsl(var(--text-secondary)); }
+
+.terminalPlaceholder {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  width: 80%;
+  color: hsl(var(--text-muted));
+  font-family: var(--font-sans);
+}
+
+.sparkleIcon {
+  color: hsl(var(--accent-primary) / 0.4);
+  animation: pulsePulse 2s infinite;
+}
+
+.terminalPlaceholder p {
+  font-size: 0.8rem;
+}
