@@ -4,9 +4,10 @@ import type { Itinerary, ActivitySlot, DiningSlot, TransitInfo } from '../utils/
 import { travelDatabase } from '../data/travelDatabase';
 import type { Attraction } from '../data/travelDatabase';
 import { VectorMap } from './VectorMap';
+import { GoogleMapsView } from './GoogleMapsView';
 import { 
   Coffee, Utensils, Navigation, 
-  RefreshCw, DollarSign, Brain 
+  RefreshCw, DollarSign, Brain, Map, Layers
 } from 'lucide-react';
 import styles from './ItineraryDashboard.module.css';
 
@@ -28,9 +29,13 @@ export const ItineraryDashboard: React.FC<ItineraryDashboardProps> = ({
   isSimulating = false
 }) => {
   const [swappingSlot, setSwappingSlot] = useState<{ dayNum: number; slotKey: 'morning' | 'afternoon' | 'evening' } | null>(null);
+  const [mapMode, setMapMode] = useState<'vector' | 'google'>('vector');
 
   const activeDay = itinerary.days.find(d => d.dayNumber === activeDayNum) || itinerary.days[0];
   const dest = travelDatabase[itinerary.destinationId];
+  
+  // Safe environment lookup for Google Maps API Key
+  const googleMapsApiKey = (import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '') as string;
 
   // Get list of alternative attractions not currently scheduled
   const getAlternatives = () => {
@@ -74,7 +79,7 @@ export const ItineraryDashboard: React.FC<ItineraryDashboardProps> = ({
   const renderTransit = (transit?: TransitInfo) => {
     if (!transit) return null;
     return (
-      <div className={styles.transitConnector}>
+      <div className={styles.transitConnector} role="note" aria-label="Transit recommendation">
         <Navigation size={12} style={{ transform: 'rotate(45deg)' }} />
         <span>
           Travel: {transit.durationMin} mins via <strong>{transit.mode}</strong> 
@@ -89,7 +94,7 @@ export const ItineraryDashboard: React.FC<ItineraryDashboardProps> = ({
     const item = slot.activity;
 
     return (
-      <div className={`timeline-item ${styles.slotItem}`}>
+      <div className={`timeline-item ${styles.slotItem}`} role="article" aria-label={`${slotKey} activity`}>
         <div className="timeline-dot" />
         <div className={`${styles.slotCard} glass-card ${isCurrent ? styles.activeCard : ''}`}>
           <div className={styles.slotTime}>
@@ -113,6 +118,7 @@ export const ItineraryDashboard: React.FC<ItineraryDashboardProps> = ({
               className={`btn-icon ${styles.swapBtn}`} 
               onClick={() => setSwappingSlot({ dayNum: activeDayNum, slotKey })}
               title="Swap Activity"
+              aria-label={`Swap activity ${item.name}`}
             >
               <RefreshCw size={14} />
             </button>
@@ -145,7 +151,7 @@ export const ItineraryDashboard: React.FC<ItineraryDashboardProps> = ({
     const item = slot.restaurant;
 
     return (
-      <div className={`timeline-item ${styles.slotItem}`}>
+      <div className={`timeline-item ${styles.slotItem}`} role="article" aria-label={`${mealType} dining`}>
         <div className="timeline-dot" />
         <div className={`${styles.slotCard} ${styles.diningCard} glass-card ${isCurrent ? styles.activeCard : ''}`}>
           <div className={styles.slotTime}>
@@ -164,7 +170,7 @@ export const ItineraryDashboard: React.FC<ItineraryDashboardProps> = ({
                 {item.dietaryFlags.map(flag => (
                   <span key={flag} className="badge badge-diet">{flag}</span>
                 ))}
-                <span className={styles.priceScale}>
+                <span className={styles.priceScale} aria-label={`Cost level: ${item.costLevel} out of 3`}>
                   {Array.from({ length: item.costLevel }).map((_, i) => (
                     <DollarSign key={i} size={10} className={styles.activeDollar} />
                   ))}
@@ -191,7 +197,7 @@ export const ItineraryDashboard: React.FC<ItineraryDashboardProps> = ({
     <div className="dashboard-grid animate-fade">
       {/* Timeline Column */}
       <div className={styles.timelineColumn}>
-        <div className={`${styles.summaryBanner} glass-panel`}>
+        <div className={`${styles.summaryBanner} glass-panel`} role="banner">
           <div className={styles.bannerInfo}>
             <h2>{dest.name} Itinerary</h2>
             <div className={styles.summaryBadges}>
@@ -202,17 +208,19 @@ export const ItineraryDashboard: React.FC<ItineraryDashboardProps> = ({
               <span>Hotel: {itinerary.hotel.name}</span>
             </div>
           </div>
-          <div className={styles.bannerCost}>
+          <div className={styles.bannerCost} aria-label="Total estimated budget">
             <span className={styles.costLabel}>Total Estimated Budget</span>
             <span className={styles.costVal}>${itinerary.totalCost}</span>
           </div>
         </div>
 
         {/* Day Selectors */}
-        <div className={styles.dayTabs}>
+        <div className={styles.dayTabs} role="tablist" aria-label="Schedule days">
           {itinerary.days.map(d => (
             <button
               key={d.dayNumber}
+              role="tab"
+              aria-selected={activeDayNum === d.dayNumber}
               className={`${styles.dayTabBtn} ${activeDayNum === d.dayNumber ? styles.activeDayTab : ''}`}
               onClick={() => setActiveDayNum(d.dayNumber)}
             >
@@ -222,7 +230,7 @@ export const ItineraryDashboard: React.FC<ItineraryDashboardProps> = ({
         </div>
 
         {/* Timeline Sequence */}
-        <div className="timeline">
+        <div className="timeline" role="region" aria-label={`Day ${activeDayNum} schedule timeline`}>
           {renderDiningCard(activeDay.breakfast, 'Breakfast')}
           {renderAttractionCard(activeDay.morning, 'morning')}
           {renderDiningCard(activeDay.lunch, 'Lunch')}
@@ -234,21 +242,80 @@ export const ItineraryDashboard: React.FC<ItineraryDashboardProps> = ({
 
       {/* Map Column */}
       <div className={styles.mapColumn}>
-        <VectorMap
-          activeDay={activeDay}
-          hotel={itinerary.hotel}
-          cityName={dest.name}
-          simulatedTimeSlot={simulatedTimeSlot}
-          isSimulating={isSimulating}
-        />
+        {/* Toggle Mode for Maps */}
+        <div 
+          style={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            marginBottom: '8px',
+            gap: '8px'
+          }}
+        >
+          <button
+            onClick={() => setMapMode('vector')}
+            style={{
+              padding: '6px 12px',
+              fontSize: '0.78rem',
+              borderRadius: '6px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              cursor: 'pointer',
+              backgroundColor: mapMode === 'vector' ? '#8a4bf1' : '#1e1e2f',
+              border: `1px solid ${mapMode === 'vector' ? '#a855f7' : '#3c3c54'}`,
+              color: '#ffffff',
+              fontWeight: 600
+            }}
+            aria-label="Switch to vector grid map view"
+          >
+            <Layers style={{ width: '13px', height: '13px' }} /> Custom Vector Map
+          </button>
+          <button
+            onClick={() => setMapMode('google')}
+            style={{
+              padding: '6px 12px',
+              fontSize: '0.78rem',
+              borderRadius: '6px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              cursor: 'pointer',
+              backgroundColor: mapMode === 'google' ? '#8a4bf1' : '#1e1e2f',
+              border: `1px solid ${mapMode === 'google' ? '#a855f7' : '#3c3c54'}`,
+              color: '#ffffff',
+              fontWeight: 600
+            }}
+            aria-label="Switch to interactive Google Maps view"
+          >
+            <Map style={{ width: '13px', height: '13px' }} /> Interactive Google Maps
+          </button>
+        </div>
+
+        {mapMode === 'vector' ? (
+          <VectorMap
+            activeDay={activeDay}
+            hotel={itinerary.hotel}
+            cityName={dest.name}
+            simulatedTimeSlot={simulatedTimeSlot}
+            isSimulating={isSimulating}
+          />
+        ) : (
+          <GoogleMapsView
+            activeDay={activeDay}
+            hotel={itinerary.hotel}
+            cityName={dest.name}
+            destinationId={itinerary.destinationId}
+            apiKey={googleMapsApiKey}
+          />
+        )}
         
         {/* Accommodation info panel */}
-        <div className={`${styles.hotelPanel} glass-panel`}>
+        <div className={`${styles.hotelPanel} glass-panel`} role="complementary" aria-label="Lodging details">
           <h4 className={styles.panelTitle}>Lodging Basecamp</h4>
           <div className={styles.hotelInfo}>
             <div>
               <strong>{itinerary.hotel.name}</strong>
-              <div className={styles.ratingStars}>
+              <div className={styles.ratingStars} aria-label={`Rating: ${itinerary.hotel.rating} stars`}>
                 {Array.from({ length: 5 }).map((_, i) => (
                   <span key={i} className={i < Math.floor(itinerary.hotel.rating) ? styles.starFilled : styles.starEmpty}>★</span>
                 ))}
@@ -265,23 +332,41 @@ export const ItineraryDashboard: React.FC<ItineraryDashboardProps> = ({
 
       {/* Swap Modal Overlay */}
       {swappingSlot && (
-        <div className={styles.modalOverlay}>
+        <div className={styles.modalOverlay} role="dialog" aria-modal="true" aria-labelledby="modal-title">
           <div className={`${styles.modalContent} glass-panel animate-slideup`}>
             <div className={styles.modalHeader}>
-              <h3>Swap Attraction</h3>
-              <button className={styles.closeModal} onClick={() => setSwappingSlot(null)}>×</button>
+              <h3 id="modal-title">Swap Attraction</h3>
+              <button 
+                className={styles.closeModal} 
+                onClick={() => setSwappingSlot(null)}
+                aria-label="Close modal dialog"
+              >
+                ×
+              </button>
             </div>
             
             <p className={styles.modalSubtitle}>
               Select an alternative attraction to slot in. We will recalculate routes and travel times.
             </p>
 
-            <div className={styles.alternativesList}>
+            <div className={styles.alternativesList} role="group" aria-label="Attraction options">
               {alternatives.length === 0 ? (
                 <div className={styles.emptyState}>No alternative attractions available in database.</div>
               ) : (
                 alternatives.map(item => (
-                  <div key={item.id} className={`${styles.altCard} glass-card`} onClick={() => handleSwap(item)}>
+                  <div 
+                    key={item.id} 
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Swap to ${item.name}, price: ${item.costApprox} dollars`}
+                    className={`${styles.altCard} glass-card`} 
+                    onClick={() => handleSwap(item)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        handleSwap(item);
+                      }
+                    }}
+                  >
                     <div className={styles.altImageWrapper}>
                       <img src={item.imageUrl} alt={item.name} className={styles.altImage} />
                     </div>

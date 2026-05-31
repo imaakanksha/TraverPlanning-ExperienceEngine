@@ -6,6 +6,8 @@ import { ItineraryDashboard } from './components/ItineraryDashboard';
 import { RealTimeSimulator } from './components/RealTimeSimulator';
 import { ExpenseAnalytics } from './components/ExpenseAnalytics';
 import { TravelJournal } from './components/TravelJournal';
+import cacheService from './utils/cacheService';
+import logger from './utils/logger';
 import { 
   Compass, Calendar, BarChart3, BookOpen, Sun, Moon, 
   Sparkles, Home 
@@ -61,7 +63,25 @@ function App() {
     pace: 'Relaxed' | 'Balanced' | 'Fast-paced';
   }) => {
     try {
-      const result = generateItinerary(inputs);
+      // Create cache key based on inputs
+      const cacheKey = `itinerary_${inputs.destinationId}_d${inputs.daysCount}_b${inputs.budgetPreference}_p_${inputs.pace}_m_${inputs.mobility}_i_${inputs.interests.join('-')}_f_${inputs.dietary.join('-')}`;
+      
+      logger.info('Compiling travel itinerary package.', { inputs });
+
+      // 1. Check TTL cache
+      const cachedItinerary = cacheService.get<Itinerary>(cacheKey);
+      let result: Itinerary;
+
+      if (cachedItinerary) {
+        logger.info('Cache hit for itinerary compilation.', { cacheKey });
+        result = cachedItinerary;
+      } else {
+        // 2. Heavy computation path (memoized/cached for future requests)
+        result = generateItinerary(inputs);
+        cacheService.set(cacheKey, result, 600); // cache for 10 minutes (600s)
+        logger.info('Cache miss: Compiled itinerary successfully and cached payload.', { cacheKey });
+      }
+
       setItinerary(result);
       setActiveDayNum(1);
       setActiveTab('itinerary');
@@ -76,6 +96,7 @@ function App() {
       setIsSimulating(false);
       setJournalEntries({});
     } catch (err: any) {
+      logger.error('Itinerary generation error:', err);
       alert(err.message || 'Error generating itinerary.');
     }
   };
@@ -121,6 +142,8 @@ function App() {
     if (!itinerary) return;
     const isActivating = !triggeredEvents[eventType];
 
+    logger.info('Simulator Event Triggered', { eventType, isActivating, activeDayNum });
+
     // Calculate recalculations
     const { updatedItinerary, logs } = recalculateItinerary(
       itinerary,
@@ -142,16 +165,18 @@ function App() {
       ...prev,
       [dayNum]: text
     }));
+    logger.info('Saved daily stamp journal entry.', { dayNumber: dayNum });
   };
 
   const handleReset = () => {
     if (confirm('Are you sure you want to discard this trip plan and plan a new one?')) {
       setItinerary(null);
       setIsSimulating(false);
+      logger.info('Trip architect reset. Discarded active itinerary.');
     }
   };
 
-  // Custom targets limit computation (e.g. Budget gets $400, Mid gets $800, Luxury gets $2000)
+  // Custom targets limit computation (e.g. Budget gets $350, Mid gets $800, Luxury gets $2500)
   const budgetLimit = itinerary ? (itinerary.budgetPreference === 1 ? 350 : itinerary.budgetPreference === 2 ? 800 : 2500) : 1000;
 
   // Active warning alerts count (for tabs navigation badge glow)
@@ -160,7 +185,7 @@ function App() {
   return (
     <div className="app-container">
       {/* App Header */}
-      <header className="header">
+      <header className="header" role="banner">
         <div className="logo">
           <Sparkles size={20} style={{ fill: 'currentColor' }} />
           <span>Traverse Engine</span>
@@ -174,7 +199,7 @@ function App() {
 
         <div className="header-actions" style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
           {itinerary && (
-            <button className="btn-secondary" onClick={handleReset} style={{ padding: '0.4rem 0.85rem', fontSize: '0.85rem' }}>
+            <button className="btn-secondary" onClick={handleReset} style={{ padding: '0.4rem 0.85rem', fontSize: '0.85rem' }} aria-label="Create new plan">
               <Home size={14} /> New Plan
             </button>
           )}
@@ -182,6 +207,7 @@ function App() {
             className="btn-icon" 
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
             title="Toggle Theme"
+            aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
           >
             {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
           </button>
@@ -189,7 +215,7 @@ function App() {
       </header>
 
       {/* Main Content Area */}
-      <main className="main-content">
+      <main className="main-content" role="main">
         {!itinerary ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center', width: '100%' }}>
             <div style={{ textAlign: 'center', maxWidth: '600px', margin: '1rem auto' }}>
@@ -205,14 +231,18 @@ function App() {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', width: '100%' }}>
             {/* Tabs Bar */}
-            <div className="tabs-nav">
+            <div className="tabs-nav" role="tablist" aria-label="Workspace views">
               <button 
+                role="tab"
+                aria-selected={activeTab === 'itinerary'}
                 className={`tab-btn ${activeTab === 'itinerary' ? 'active' : ''}`}
                 onClick={() => setActiveTab('itinerary')}
               >
                 <Calendar size={16} /> Itinerary
               </button>
               <button 
+                role="tab"
+                aria-selected={activeTab === 'simulator'}
                 className={`tab-btn ${activeTab === 'simulator' ? 'active' : ''}`}
                 onClick={() => setActiveTab('simulator')}
                 style={{ position: 'relative' }}
@@ -239,12 +269,16 @@ function App() {
                 )}
               </button>
               <button 
+                role="tab"
+                aria-selected={activeTab === 'analytics'}
                 className={`tab-btn ${activeTab === 'analytics' ? 'active' : ''}`}
                 onClick={() => setActiveTab('analytics')}
               >
                 <BarChart3 size={16} /> Expense Audit
               </button>
               <button 
+                role="tab"
+                aria-selected={activeTab === 'journal'}
                 className={`tab-btn ${activeTab === 'journal' ? 'active' : ''}`}
                 onClick={() => setActiveTab('journal')}
               >
