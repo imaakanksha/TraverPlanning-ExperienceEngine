@@ -19,6 +19,8 @@ interface ItineraryDashboardProps {
   simulatedTimeSlot?: 'morning' | 'lunch' | 'afternoon' | 'dinner' | 'evening';
   isSimulating?: boolean;
   triggeredEvents?: Record<string, boolean>;
+  onAvoidIncident?: (title: string) => void;
+  onInsertHotspot?: (title: string) => void;
 }
 
 export const ItineraryDashboard: React.FC<ItineraryDashboardProps> = ({
@@ -28,7 +30,9 @@ export const ItineraryDashboard: React.FC<ItineraryDashboardProps> = ({
   setActiveDayNum,
   simulatedTimeSlot,
   isSimulating = false,
-  triggeredEvents = {}
+  triggeredEvents = {},
+  onAvoidIncident,
+  onInsertHotspot
 }) => {
   const [swappingSlot, setSwappingSlot] = useState<{ dayNum: number; slotKey: 'morning' | 'afternoon' | 'evening' } | null>(null);
   const [mapMode, setMapMode] = useState<'vector' | 'google'>('vector');
@@ -338,6 +342,8 @@ export const ItineraryDashboard: React.FC<ItineraryDashboardProps> = ({
             cityName={dest.name}
             destinationId={itinerary.destinationId}
             apiKey={googleMapsApiKey}
+            onAvoidIncident={onAvoidIncident}
+            onInsertHotspot={onInsertHotspot}
           />
         )}
         
@@ -359,6 +365,57 @@ export const ItineraryDashboard: React.FC<ItineraryDashboardProps> = ({
             </div>
           </div>
           <p className={styles.hotelDesc}>{itinerary.hotel.description}</p>
+        </div>
+
+        {/* Semantic structural table detailing daily expenses */}
+        <div style={{ marginTop: '16px', border: '1px solid #232330', borderRadius: '8px', padding: '12px', backgroundColor: '#12121a' }}>
+          <h4 style={{ fontSize: '0.85rem', textTransform: 'uppercase', color: '#85859e', marginBottom: '8px', fontWeight: 700 }}>
+            📊 Financial Breakdown & Audit
+          </h4>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem', color: '#f4f4f7' }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid #232330', color: '#85859e', textAlign: 'left' }}>
+                <th style={{ padding: '6px 4px' }}>Expense Sector</th>
+                <th style={{ padding: '6px 4px' }}>Actual Cost</th>
+                <th style={{ padding: '6px 4px' }}>Limit Buffer</th>
+                <th style={{ padding: '6px 4px' }}>Status Indicator</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style={{ borderBottom: '1px solid #1c1c28' }}>
+                <td style={{ padding: '6px 4px', fontWeight: 600 }}>🏨 Lodging Base</td>
+                <td style={{ padding: '6px 4px' }}>${itinerary.hotel.costApprox * itinerary.days.length}</td>
+                <td style={{ padding: '6px 4px' }}>Fixed</td>
+                <td style={{ padding: '6px 4px', color: '#34d399' }}>✅ Secured</td>
+              </tr>
+              <tr style={{ borderBottom: '1px solid #1c1c28' }}>
+                <td style={{ padding: '6px 4px', fontWeight: 600 }}>🍴 Dining (3 Meals)</td>
+                <td style={{ padding: '6px 4px' }}>
+                  ${itinerary.days.reduce((acc, d) => acc + d.breakfast.restaurant.costApprox + d.lunch.restaurant.costApprox + d.dinner.restaurant.costApprox, 0)}
+                </td>
+                <td style={{ padding: '6px 4px' }}>$35 / meal</td>
+                <td style={{ padding: '6px 4px', color: '#34d399' }}>✅ Optimal</td>
+              </tr>
+              <tr style={{ borderBottom: '1px solid #1c1c28' }}>
+                <td style={{ padding: '6px 4px', fontWeight: 600 }}>🎭 Attraction Tickets</td>
+                <td style={{ padding: '6px 4px' }}>
+                  ${itinerary.days.reduce((acc, d) => acc + d.morning.activity.costApprox + d.afternoon.activity.costApprox + d.evening.activity.costApprox, 0)}
+                </td>
+                <td style={{ padding: '6px 4px' }}>Cap limit</td>
+                <td style={{ padding: '6px 4px', color: '#34d399' }}>✅ Optimal</td>
+              </tr>
+              <tr>
+                <td style={{ padding: '6px 4px', fontWeight: 600 }}>🚘 Transit & Fares</td>
+                <td style={{ padding: '6px 4px' }}>
+                  ${(itinerary.totalCost - (itinerary.hotel.costApprox * itinerary.days.length) - itinerary.days.reduce((acc, d) => acc + d.breakfast.restaurant.costApprox + d.lunch.restaurant.costApprox + d.dinner.restaurant.costApprox, 0) - itinerary.days.reduce((acc, d) => acc + d.morning.activity.costApprox + d.afternoon.activity.costApprox + d.evening.activity.costApprox, 0))}
+                </td>
+                <td style={{ padding: '6px 4px' }}>$50</td>
+                <td style={{ padding: '6px 4px', color: triggeredEvents?.TRAFFIC ? '#f59e0b' : '#34d399' }}>
+                  {triggeredEvents?.TRAFFIC ? '⚠️ Delayed Fares' : '✅ Optimal'}
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
