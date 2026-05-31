@@ -1,5 +1,5 @@
 import { travelDatabase } from '../data/travelDatabase';
-import type { Attraction, Dining, Hotel, Destination } from '../data/travelDatabase';
+import type { Attraction, Dining, Hotel } from '../data/travelDatabase';
 
 export interface TransitInfo {
   mode: 'Walking' | 'Subway' | 'Taxi' | 'Train';

@@ -1,8 +1,7 @@
-import React, { useMemo } from 'react';
-import type { Attraction, Dining, Hotel } from '../data/travelDatabase';
-import { calculateDistance } from '../utils/planningEngine';
+import { useMemo } from 'react';
+import type { Hotel } from '../data/travelDatabase';
 import type { DayItinerary } from '../utils/planningEngine';
-import { MapPin, Navigation, Home, Utensils } from 'lucide-react';
+import { Navigation, Home, Utensils } from 'lucide-react';
 import styles from './VectorMap.module.css';
 
 interface VectorMapProps {

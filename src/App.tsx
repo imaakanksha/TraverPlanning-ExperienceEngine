@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { generateItinerary, recalculateItinerary } from './utils/planningEngine';
 import type { Itinerary } from './utils/planningEngine';
 import { PlannerWizard } from './components/PlannerWizard';
@@ -8,7 +8,7 @@ import { ExpenseAnalytics } from './components/ExpenseAnalytics';
 import { TravelJournal } from './components/TravelJournal';
 import { 
   Compass, Calendar, BarChart3, BookOpen, Sun, Moon, 
-  Sparkles, RefreshCw, Home 
+  Sparkles, Home 
 } from 'lucide-react';
 
 function App() {
@@ -42,7 +42,7 @@ function App() {
 
   // Simulation Clock Auto-Ticking Interval
   useEffect(() => {
-    let timer: NodeJS.Timeout;
+    let timer: any;
     if (isSimulating) {
       timer = setInterval(() => {
         handleAdvanceSlot();

@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { getTransit, calculateTotalCost } from '../utils/planningEngine';
-import type { Itinerary, DayItinerary, ActivitySlot, DiningSlot, TransitInfo } from '../utils/planningEngine';
+import type { Itinerary, ActivitySlot, DiningSlot, TransitInfo } from '../utils/planningEngine';
 import { travelDatabase } from '../data/travelDatabase';
 import type { Attraction } from '../data/travelDatabase';
 import { VectorMap } from './VectorMap';
 import { 
-  Coffee, Utensils, Compass, Sun, Eye, Navigation, 
-  RefreshCw, DollarSign, Brain, Heart, Landmark, HelpCircle 
+  Coffee, Utensils, Navigation, 
+  RefreshCw, DollarSign, Brain 
 } from 'lucide-react';
 import styles from './ItineraryDashboard.module.css';
 
