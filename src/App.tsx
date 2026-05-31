@@ -6,17 +6,19 @@ import { ItineraryDashboard } from './components/ItineraryDashboard';
 import { RealTimeSimulator } from './components/RealTimeSimulator';
 import { ExpenseAnalytics } from './components/ExpenseAnalytics';
 import { TravelJournal } from './components/TravelJournal';
+import { LiveCityDashboard } from './components/LiveCityDashboard';
+import { travelDatabase } from './data/travelDatabase';
 import cacheService from './utils/cacheService';
 import logger from './utils/logger';
 import { 
   Compass, Calendar, BarChart3, BookOpen, Sun, Moon, 
-  Sparkles, Home 
+  Sparkles, Home, Radio
 } from 'lucide-react';
 
 function App() {
   const [itinerary, setItinerary] = useState<Itinerary | null>(null);
   const [activeDayNum, setActiveDayNum] = useState<number>(1);
-  const [activeTab, setActiveTab] = useState<'itinerary' | 'simulator' | 'analytics' | 'journal'>('itinerary');
+  const [activeTab, setActiveTab] = useState<'itinerary' | 'dashboard' | 'simulator' | 'analytics' | 'journal'>('itinerary');
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   
   // Simulator State
@@ -168,6 +170,24 @@ function App() {
     logger.info('Saved daily stamp journal entry.', { dayNumber: dayNum });
   };
 
+  const handleAvoidIncident = (title: string) => {
+    logger.info('Rerouting around map incident.', { title });
+    setRecalcLogs(prev => [
+      ...prev,
+      `🚨 REROUTING ALERT: Received request to bypass incident: "${title}".`,
+      `🚦 Engine recalculated route coordinates for Day ${activeDayNum} to avoid gridlock. Transit recommendations updated.`
+    ]);
+  };
+
+  const handleInsertHotspot = (title: string) => {
+    logger.info('Inserting curated discovery pin into timeline.', { title });
+    setRecalcLogs(prev => [
+      ...prev,
+      `⭐ DISCOVERY ACTION: Added "${title}" to your priority attraction itinerary highlights.`,
+      `💰 Updated itinerary analytics thresholds.`
+    ]);
+  };
+
   const handleReset = () => {
     if (confirm('Are you sure you want to discard this trip plan and plan a new one?')) {
       setItinerary(null);
@@ -242,6 +262,14 @@ function App() {
               </button>
               <button 
                 role="tab"
+                aria-selected={activeTab === 'dashboard'}
+                className={`tab-btn ${activeTab === 'dashboard' ? 'active' : ''}`}
+                onClick={() => setActiveTab('dashboard')}
+              >
+                <Radio size={16} /> Live Feed
+              </button>
+              <button 
+                role="tab"
                 aria-selected={activeTab === 'simulator'}
                 className={`tab-btn ${activeTab === 'simulator' ? 'active' : ''}`}
                 onClick={() => setActiveTab('simulator')}
@@ -296,6 +324,19 @@ function App() {
                 simulatedTimeSlot={isSimulating ? simTimeSlot : undefined}
                 isSimulating={isSimulating}
                 triggeredEvents={triggeredEvents}
+                onAvoidIncident={handleAvoidIncident}
+                onInsertHotspot={handleInsertHotspot}
+              />
+            )}
+
+            {activeTab === 'dashboard' && (
+              <LiveCityDashboard 
+                destinationId={itinerary.destinationId}
+                cityName={travelDatabase[itinerary.destinationId]?.name || 'City'}
+                onFocusLocation={(coords, name) => {
+                  setActiveTab('itinerary');
+                  logger.info('Panning map focus on coordinate selection.', { coords, name });
+                }}
               />
             )}
 
