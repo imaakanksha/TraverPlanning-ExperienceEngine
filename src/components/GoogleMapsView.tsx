@@ -1,8 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import type { Hotel } from '../data/travelDatabase';
 import type { DayItinerary } from '../utils/planningEngine';
-import logger from '../utils/logger';
-import { AlertTriangle, MapPin, Compass, AlertCircle, Award } from 'lucide-react';
+import { AlertTriangle, Compass, AlertCircle } from 'lucide-react';
 
 interface GoogleMapsViewProps {
   activeDay: DayItinerary;
@@ -44,7 +43,7 @@ export function getGeoCoordinates(
 export const GoogleMapsView: React.FC<GoogleMapsViewProps> = ({
   activeDay,
   hotel,
-  cityName,
+  cityName: _cityName,
   destinationId,
   apiKey = '',
   onAvoidIncident,
@@ -290,26 +289,35 @@ export const GoogleMapsView: React.FC<GoogleMapsViewProps> = ({
     const marker = isOverlay ? overlayMarkersRef.current[index] : markersRef.current[index];
     if (marker && infoWindowRef.current && mapRef.current) {
       mapRef.current.panTo(marker.getPosition());
-      
-      const p = isOverlay ? cityOverlays[index] : itineraryPoints[index];
-      const color = isOverlay ? (p.category === 'incident' ? '#ef4444' : '#f59e0b') : '#8a4bf1';
-      
-      const actionBtn = isOverlay 
-        ? (p.category === 'incident'
-          ? `<button onclick="window.handleAvoidMapIncident('${p.title}')" style="background-color:#ef4444; color:white; border:none; padding:4px 8px; border-radius:4px; font-size:0.75rem; font-weight:bold; cursor:pointer; width:100%; margin-top:8px;">⚠️ Reroute Around Incident</button>`
-          : `<button onclick="window.handleInsertMapHotspot('${p.title}')" style="background-color:#8a4bf1; color:white; border:none; padding:4px 8px; border-radius:4px; font-size:0.75rem; font-weight:bold; cursor:pointer; width:100%; margin-top:8px;">⭐ Add to Itinerary</button>`)
-        : '';
 
-      const contentString = `
-        <div style="color: #1a1a24; font-family: sans-serif; padding: 6px; max-width: 220px;">
-          <h4 style="margin: 0 0 4px 0; color: ${color}; font-weight: 700;">${p.name || p.title}</h4>
-          <p style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; color: #64748b; margin: 0 0 6px 0;">${p.type || 'Overlay Node'}</p>
-          <p style="font-size: 0.8rem; margin: 0 0 4px 0; line-height: 1.3;">${p.desc}</p>
-          ${actionBtn}
-        </div>
-      `;
-      infoWindowRef.current.setContent(contentString);
-      infoWindowRef.current.open(mapRef.current, marker);
+      if (isOverlay) {
+        const ol = cityOverlays[index];
+        const color = ol.category === 'incident' ? '#ef4444' : '#f59e0b';
+        const actionBtn = ol.category === 'incident'
+          ? `<button onclick="window.handleAvoidMapIncident('${ol.title}')" style="background-color:#ef4444; color:white; border:none; padding:4px 8px; border-radius:4px; font-size:0.75rem; font-weight:bold; cursor:pointer; width:100%; margin-top:8px;">⚠️ Reroute Around Incident</button>`
+          : `<button onclick="window.handleInsertMapHotspot('${ol.title}')" style="background-color:#8a4bf1; color:white; border:none; padding:4px 8px; border-radius:4px; font-size:0.75rem; font-weight:bold; cursor:pointer; width:100%; margin-top:8px;">⭐ Add to Itinerary</button>`;
+        const contentString = `
+          <div style="color: #1a1a24; font-family: sans-serif; padding: 6px; max-width: 220px;">
+            <h4 style="margin: 0 0 4px 0; color: ${color}; font-weight: 700;">${ol.title}</h4>
+            <p style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; color: #64748b; margin: 0 0 6px 0;">Overlay Node</p>
+            <p style="font-size: 0.8rem; margin: 0 0 4px 0; line-height: 1.3;">${ol.desc}</p>
+            ${actionBtn}
+          </div>
+        `;
+        infoWindowRef.current.setContent(contentString);
+        infoWindowRef.current.open(mapRef.current, marker);
+      } else {
+        const p = itineraryPoints[index];
+        const contentString = `
+          <div style="color: #1a1a24; font-family: sans-serif; padding: 6px; max-width: 220px;">
+            <h4 style="margin: 0 0 4px 0; color: #8a4bf1; font-weight: 700;">${p.name}</h4>
+            <p style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; color: #64748b; margin: 0 0 6px 0;">${p.type}</p>
+            <p style="font-size: 0.8rem; margin: 0 0 4px 0; line-height: 1.3;">${p.desc}</p>
+          </div>
+        `;
+        infoWindowRef.current.setContent(contentString);
+        infoWindowRef.current.open(mapRef.current, marker);
+      }
     }
   };
 
