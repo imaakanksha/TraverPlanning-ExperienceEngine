@@ -17,6 +17,8 @@ interface LiveCityDashboardProps {
   destinationId: string;
   cityName: string;
   onFocusLocation?: (coords: { x: number; y: number }, name: string) => void;
+  onAvoidIncident?: (title: string) => void;
+  onInsertHotspot?: (title: string, coords: { x: number; y: number }, desc: string, category: string) => void;
 }
 
 // Pre-seeded dynamic live city announcements database
@@ -156,7 +158,9 @@ const ANNOUNCEMENTS_DB: Record<string, LiveAnnouncement[]> = {
 export const LiveCityDashboard: React.FC<LiveCityDashboardProps> = ({
   destinationId,
   cityName,
-  onFocusLocation
+  onFocusLocation,
+  onAvoidIncident,
+  onInsertHotspot
 }) => {
   const [announcements, setAnnouncements] = useState<LiveAnnouncement[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -235,15 +239,26 @@ export const LiveCityDashboard: React.FC<LiveCityDashboardProps> = ({
                     <span className={styles.timeTag}>{ann.timeLabel}</span>
                   </div>
                   <p>{ann.description}</p>
-                  {onFocusLocation && (
-                    <button
-                      onClick={() => onFocusLocation(ann.coords, ann.title)}
-                      className={styles.mapPinLink}
-                      aria-label={`Show ${ann.title} location on map`}
-                    >
-                      <MapPin size={12} /> View on Map
-                    </button>
-                  )}
+                  <div style={{ display: 'flex', gap: '12px', marginTop: '4px' }}>
+                    {onFocusLocation && (
+                      <button
+                        onClick={() => onFocusLocation(ann.coords, ann.title)}
+                        className={styles.mapPinLink}
+                        aria-label={`Show ${ann.title} location on map`}
+                      >
+                        <MapPin size={12} /> View on Map
+                      </button>
+                    )}
+                    {onAvoidIncident && (
+                      <button
+                        onClick={() => onAvoidIncident(ann.title)}
+                        className={styles.bypassLink}
+                        aria-label={`Reroute around ${ann.title}`}
+                      >
+                        🛡️ Bypass Incident
+                      </button>
+                    )}
+                  </div>
                 </article>
               ))}
           </div>
@@ -265,15 +280,26 @@ export const LiveCityDashboard: React.FC<LiveCityDashboardProps> = ({
                     <span className={styles.timeTag}>{ann.timeLabel}</span>
                   </div>
                   <p>{ann.description}</p>
-                  {onFocusLocation && (
-                    <button
-                      onClick={() => onFocusLocation(ann.coords, ann.title)}
-                      className={styles.mapPinLink}
-                      aria-label={`Show ${ann.title} location on map`}
-                    >
-                      <MapPin size={12} /> View on Map
-                    </button>
-                  )}
+                  <div style={{ display: 'flex', gap: '12px', marginTop: '4px' }}>
+                    {onFocusLocation && (
+                      <button
+                        onClick={() => onFocusLocation(ann.coords, ann.title)}
+                        className={styles.mapPinLink}
+                        aria-label={`Show ${ann.title} location on map`}
+                      >
+                        <MapPin size={12} /> View on Map
+                      </button>
+                    )}
+                    {onInsertHotspot && (
+                      <button
+                        onClick={() => onInsertHotspot(ann.title, ann.coords, ann.description, ann.category)}
+                        className={styles.addPlanLink}
+                        aria-label={`Add ${ann.title} to travel plan`}
+                      >
+                        ⭐ Add to Plan
+                      </button>
+                    )}
+                  </div>
                 </article>
               ))}
           </div>
@@ -295,15 +321,26 @@ export const LiveCityDashboard: React.FC<LiveCityDashboardProps> = ({
                     <span className={styles.timeTag}>{ann.timeLabel}</span>
                   </div>
                   <p>{ann.description}</p>
-                  {onFocusLocation && (
-                    <button
-                      onClick={() => onFocusLocation(ann.coords, ann.title)}
-                      className={styles.mapPinLink}
-                      aria-label={`Show ${ann.title} location on map`}
-                    >
-                      <MapPin size={12} /> View on Map
-                    </button>
-                  )}
+                  <div style={{ display: 'flex', gap: '12px', marginTop: '4px' }}>
+                    {onFocusLocation && (
+                      <button
+                        onClick={() => onFocusLocation(ann.coords, ann.title)}
+                        className={styles.mapPinLink}
+                        aria-label={`Show ${ann.title} location on map`}
+                      >
+                        <MapPin size={12} /> View on Map
+                      </button>
+                    )}
+                    {onInsertHotspot && (
+                      <button
+                        onClick={() => onInsertHotspot(ann.title, ann.coords, ann.description, ann.category)}
+                        className={styles.addPlanLink}
+                        aria-label={`Add ${ann.title} to travel plan`}
+                      >
+                        ⭐ Add to Plan
+                      </button>
+                    )}
+                  </div>
                 </article>
               ))}
           </div>

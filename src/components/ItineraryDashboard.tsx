@@ -21,6 +21,12 @@ interface ItineraryDashboardProps {
   triggeredEvents?: Record<string, boolean>;
   onAvoidIncident?: (title: string) => void;
   onInsertHotspot?: (title: string) => void;
+  onChangeTransitMode?: (
+    dayNum: number,
+    slotKey: 'breakfast' | 'morning' | 'lunch' | 'afternoon' | 'dinner' | 'evening' | 'discovery',
+    newMode: 'Walking' | 'Subway' | 'Taxi' | 'Train'
+  ) => void;
+  onToggleEvent?: (eventType: 'WEATHER' | 'TRAFFIC' | 'CROWD' | 'BUDGET') => void;
 }
 
 export const ItineraryDashboard: React.FC<ItineraryDashboardProps> = ({
@@ -32,7 +38,9 @@ export const ItineraryDashboard: React.FC<ItineraryDashboardProps> = ({
   isSimulating = false,
   triggeredEvents = {},
   onAvoidIncident,
-  onInsertHotspot
+  onInsertHotspot,
+  onChangeTransitMode,
+  onToggleEvent
 }) => {
   const [swappingSlot, setSwappingSlot] = useState<{ dayNum: number; slotKey: 'morning' | 'afternoon' | 'evening' } | null>(null);
   const [mapMode, setMapMode] = useState<'vector' | 'google'>('vector');
@@ -82,23 +90,55 @@ export const ItineraryDashboard: React.FC<ItineraryDashboardProps> = ({
     setSwappingSlot(null);
   };
 
-  const renderTransit = (transit?: TransitInfo) => {
+  const renderTransit = (
+    transit: TransitInfo | undefined,
+    slotKey: 'breakfast' | 'morning' | 'lunch' | 'afternoon' | 'dinner' | 'evening' | 'discovery'
+  ) => {
     if (!transit) return null;
     const isTrafficImpacted = triggeredEvents?.TRAFFIC && transit.mode !== 'Walking';
     const transitGlowClass = isTrafficImpacted ? styles.trafficGlow : '';
     return (
       <div className={`${styles.transitConnector} ${transitGlowClass}`} role="note" aria-label="Transit recommendation">
-        <Navigation size={12} style={{ transform: 'rotate(45deg)' }} />
-        <span>
-          Travel: {transit.durationMin} mins via <strong>{transit.mode}</strong> 
-          {transit.costApprox > 0 ? ` (Est. $${transit.costApprox})` : ' (Free)'}
-          {isTrafficImpacted && ' 🚦 (Traffic Jam Alert)'}
-        </span>
+        <Navigation size={12} style={{ transform: 'rotate(45deg)', color: 'var(--accent-cyan)' }} />
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', gap: '10px' }}>
+          <span>
+            Travel: {transit.durationMin} mins via <strong>{transit.mode}</strong> 
+            {transit.costApprox > 0 ? ` (Est. $${transit.costApprox})` : ' (Free)'}
+            {isTrafficImpacted && ' 🚦 (Traffic Jam Alert)'}
+          </span>
+          {onChangeTransitMode && (
+            <div style={{ display: 'flex', gap: '4px' }}>
+              {(['Walking', 'Subway', 'Taxi'] as const).map(mode => (
+                <button
+                  key={mode}
+                  onClick={() => onChangeTransitMode(activeDayNum, slotKey, mode)}
+                  style={{
+                    background: transit.mode === mode ? 'hsl(var(--accent-primary))' : '#1e1e2f',
+                    border: `1px solid ${transit.mode === mode ? 'hsl(var(--accent-primary))' : '#3c3c54'}`,
+                    color: '#ffffff',
+                    padding: '2px 6px',
+                    borderRadius: '4px',
+                    fontSize: '0.65rem',
+                    cursor: 'pointer',
+                    fontWeight: 600,
+                    transition: 'all 0.15s ease'
+                  }}
+                  title={`Switch transit leg to ${mode}`}
+                  aria-label={`Switch transit leg to ${mode}`}
+                >
+                  {mode === 'Walking' && '🚶'}
+                  {mode === 'Subway' && '🚇'}
+                  {mode === 'Taxi' && '🚕'}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     );
   };
 
-  const renderAttractionCard = (slot: ActivitySlot, slotKey: 'morning' | 'afternoon' | 'evening') => {
+  const renderAttractionCard = (slot: ActivitySlot, slotKey: 'morning' | 'afternoon' | 'evening' | 'discovery') => {
     const isCurrent = isSimulating && simulatedTimeSlot === slotKey;
     const item = slot.activity;
 
@@ -123,6 +163,7 @@ export const ItineraryDashboard: React.FC<ItineraryDashboardProps> = ({
             {slotKey === 'morning' && '10:00 AM - Morning Sight'}
             {slotKey === 'afternoon' && '02:00 PM - Afternoon Sight'}
             {slotKey === 'evening' && '07:30 PM - Evening Sight'}
+            {slotKey === 'discovery' && '09:00 PM - Nightcap Discovery'}
             {statusText}
           </div>
           
@@ -164,7 +205,7 @@ export const ItineraryDashboard: React.FC<ItineraryDashboardProps> = ({
             )}
           </div>
         </div>
-        {renderTransit(slot.transitToNext)}
+        {renderTransit(slot.transitToNext, slotKey)}
       </div>
     );
   };
@@ -217,7 +258,7 @@ export const ItineraryDashboard: React.FC<ItineraryDashboardProps> = ({
             </div>
           </div>
         </div>
-        {renderTransit(slot.transitToNext)}
+        {renderTransit(slot.transitToNext, mealType.toLowerCase() as any)}
       </div>
     );
   };
@@ -237,6 +278,14 @@ export const ItineraryDashboard: React.FC<ItineraryDashboardProps> = ({
               <span>{itinerary.pace} Pace</span>
               <span>•</span>
               <span>Hotel: {itinerary.hotel.name}</span>
+              {(activeDay as any).incidentBypassed && (
+                <>
+                  <span>•</span>
+                  <span style={{ color: '#34d399', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    🛡️ Incident Bypassed
+                  </span>
+                </>
+              )}
             </div>
           </div>
           <div className={styles.bannerCost} aria-label="Total estimated budget">
@@ -265,6 +314,69 @@ export const ItineraryDashboard: React.FC<ItineraryDashboardProps> = ({
           ))}
         </div>
 
+        {/* Live Weather Forecast widget */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          backgroundColor: '#12121a',
+          border: '1px solid #232330',
+          borderRadius: '8px',
+          padding: '10px 16px',
+          marginBottom: '16px',
+          gap: '12px',
+          flexWrap: 'wrap'
+        }} aria-label="Day weather prediction control">
+          <span style={{ fontSize: '0.78rem', color: '#85859e', fontWeight: 700, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            🌦️ Forecast & Storm Shield:
+          </span>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <button 
+              onClick={() => {
+                if (triggeredEvents.WEATHER) onToggleEvent?.('WEATHER');
+              }}
+              style={{
+                backgroundColor: !triggeredEvents.WEATHER ? '#15803d' : '#1e1e2f',
+                border: `1px solid ${!triggeredEvents.WEATHER ? '#22c55e' : '#3c3c54'}`,
+                color: '#ffffff',
+                padding: '4px 10px',
+                borderRadius: '6px',
+                fontSize: '0.78rem',
+                cursor: 'pointer',
+                fontWeight: 600,
+                transition: 'all 0.15s ease'
+              }}
+              title="Sunny: Restores standard outdoor activities"
+            >
+              ☀️ Sunny
+            </button>
+            <button 
+              onClick={() => {
+                if (!triggeredEvents.WEATHER) onToggleEvent?.('WEATHER');
+              }}
+              style={{
+                backgroundColor: triggeredEvents.WEATHER ? '#b91c1c' : '#1e1e2f',
+                border: `1px solid ${triggeredEvents.WEATHER ? '#ef4444' : '#3c3c54'}`,
+                color: '#ffffff',
+                padding: '4px 10px',
+                borderRadius: '6px',
+                fontSize: '0.78rem',
+                cursor: 'pointer',
+                fontWeight: 600,
+                transition: 'all 0.15s ease'
+              }}
+              title="Rainy: Triggers re-routing to indoor sights"
+            >
+              🌧️ Rainy Storm
+            </button>
+          </div>
+          {triggeredEvents.WEATHER && (
+            <span style={{ fontSize: '0.75rem', color: '#ef4444', fontWeight: 700 }}>
+              ⚠️ Weather rerouting active (outdoor sights swapped to indoor).
+            </span>
+          )}
+        </div>
+
         {/* Timeline Sequence */}
         <div className="timeline" role="region" aria-label={`Day ${activeDayNum} schedule timeline`}>
           {renderDiningCard(activeDay.breakfast, 'Breakfast')}
@@ -273,6 +385,7 @@ export const ItineraryDashboard: React.FC<ItineraryDashboardProps> = ({
           {renderAttractionCard(activeDay.afternoon, 'afternoon')}
           {renderDiningCard(activeDay.dinner, 'Dinner')}
           {renderAttractionCard(activeDay.evening, 'evening')}
+          {activeDay.discovery && renderAttractionCard(activeDay.discovery, 'discovery')}
         </div>
       </div>
 

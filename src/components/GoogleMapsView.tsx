@@ -62,16 +62,29 @@ export const GoogleMapsView: React.FC<GoogleMapsViewProps> = ({
 
   // 1. Compute geographical coordinates for itinerary markers
   const itineraryPoints = React.useMemo(() => {
-    return [
+    const pts = [
       { id: hotel.id, name: hotel.name, type: 'Hotel', desc: hotel.description, ...getGeoCoordinates(hotel.coordinates.x, hotel.coordinates.y, destinationId) },
       { id: activeDay.breakfast.restaurant.id, name: activeDay.breakfast.restaurant.name, type: 'Breakfast', desc: activeDay.breakfast.restaurant.description, ...getGeoCoordinates(activeDay.breakfast.restaurant.coordinates.x, activeDay.breakfast.restaurant.coordinates.y, destinationId) },
       { id: activeDay.morning.activity.id, name: activeDay.morning.activity.name, type: 'Morning Activity', desc: activeDay.morning.activity.description, ...getGeoCoordinates(activeDay.morning.activity.coordinates.x, activeDay.morning.activity.coordinates.y, destinationId) },
       { id: activeDay.lunch.restaurant.id, name: activeDay.lunch.restaurant.name, type: 'Lunch', desc: activeDay.lunch.restaurant.description, ...getGeoCoordinates(activeDay.lunch.restaurant.coordinates.x, activeDay.lunch.restaurant.coordinates.y, destinationId) },
       { id: activeDay.afternoon.activity.id, name: activeDay.afternoon.activity.name, type: 'Afternoon Activity', desc: activeDay.afternoon.activity.description, ...getGeoCoordinates(activeDay.afternoon.activity.coordinates.x, activeDay.afternoon.activity.coordinates.y, destinationId) },
       { id: activeDay.dinner.restaurant.id, name: activeDay.dinner.restaurant.name, type: 'Dinner', desc: activeDay.dinner.restaurant.description, ...getGeoCoordinates(activeDay.dinner.restaurant.coordinates.x, activeDay.dinner.restaurant.coordinates.y, destinationId) },
-      { id: activeDay.evening.activity.id, name: activeDay.evening.activity.name, type: 'Evening Activity', desc: activeDay.evening.activity.description, ...getGeoCoordinates(activeDay.evening.activity.coordinates.x, activeDay.evening.activity.coordinates.y, destinationId) },
-      { id: `${hotel.id}_end`, name: hotel.name, type: 'Hotel Return', desc: 'Overnight lodging.', ...getGeoCoordinates(hotel.coordinates.x, hotel.coordinates.y, destinationId) }
+      { id: activeDay.evening.activity.id, name: activeDay.evening.activity.name, type: 'Evening Activity', desc: activeDay.evening.activity.description, ...getGeoCoordinates(activeDay.evening.activity.coordinates.x, activeDay.evening.activity.coordinates.y, destinationId) }
     ];
+
+    if (activeDay.discovery) {
+      pts.push({
+        id: activeDay.discovery.activity.id,
+        name: activeDay.discovery.activity.name,
+        type: 'Nightcap Discovery',
+        desc: activeDay.discovery.activity.description,
+        ...getGeoCoordinates(activeDay.discovery.activity.coordinates.x, activeDay.discovery.activity.coordinates.y, destinationId)
+      });
+    }
+
+    pts.push({ id: `${hotel.id}_end`, name: hotel.name, type: 'Hotel Return', desc: 'Overnight lodging.', ...getGeoCoordinates(hotel.coordinates.x, hotel.coordinates.y, destinationId) });
+
+    return pts;
   }, [activeDay, hotel, destinationId]);
 
   // 2. Generate active city overlays (Incidents & Discovery Hotspots)
@@ -147,8 +160,8 @@ export const GoogleMapsView: React.FC<GoogleMapsViewProps> = ({
           if (onAvoidIncident) onAvoidIncident(title);
           infoWindowRef.current.close();
         };
-        (window as any).handleInsertMapHotspot = (title: string) => {
-          if (onInsertHotspot) onInsertHotspot(title);
+        (window as any).handleInsertMapHotspot = (title: string, x: number, y: number, desc: string, category: string) => {
+          if (onInsertHotspot) onInsertHotspot(title, { x, y }, desc, category);
           infoWindowRef.current.close();
         };
       }
@@ -246,7 +259,7 @@ export const GoogleMapsView: React.FC<GoogleMapsViewProps> = ({
           // Action button in InfoWindow
           const actionBtn = ol.category === 'incident'
             ? `<button onclick="window.handleAvoidMapIncident('${ol.title}')" style="background-color:#ef4444; color:white; border:none; padding:4px 8px; border-radius:4px; font-size:0.75rem; font-weight:bold; cursor:pointer; width:100%; margin-top:8px;">⚠️ Reroute Around Incident</button>`
-            : `<button onclick="window.handleInsertMapHotspot('${ol.title}')" style="background-color:#8a4bf1; color:white; border:none; padding:4px 8px; border-radius:4px; font-size:0.75rem; font-weight:bold; cursor:pointer; width:100%; margin-top:8px;">⭐ Add to Itinerary</button>`;
+            : `<button onclick="window.handleInsertMapHotspot('${ol.title}', ${ol.x}, ${ol.y}, '${ol.desc.replace(/'/g, "\\'")}', '${ol.category}')" style="background-color:#8a4bf1; color:white; border:none; padding:4px 8px; border-radius:4px; font-size:0.75rem; font-weight:bold; cursor:pointer; width:100%; margin-top:8px;">⭐ Add to Itinerary</button>`;
 
           const infoContent = `
             <div style="color: #1a1a24; font-family: sans-serif; padding: 6px; max-width: 220px;">

@@ -1,4 +1,4 @@
-import { generateItinerary, recalculateItinerary, calculateDistance, getTransit } from '../utils/planningEngine';
+import { generateItinerary, recalculateItinerary, calculateDistance, getTransit, getTransitWithMode, calculateTotalCost } from '../utils/planningEngine';
 import { travelDatabase } from '../data/travelDatabase';
 import { cacheService } from '../utils/cacheService';
 
@@ -140,6 +140,55 @@ describe('Travel Planning Scheduler Engine Tests', () => {
         destinationId: 'invalid-city'
       });
     }).toThrow('Destination invalid-city not found.');
+  });
+
+  it('should calculate custom transit info using getTransitWithMode', () => {
+    const p1 = { x: 10, y: 10 };
+    const p2 = { x: 20, y: 20 };
+    const walkingTransit = getTransitWithMode(p1, p2, 'Walking', false);
+    const subwayTransit = getTransitWithMode(p1, p2, 'Subway', false);
+    const taxiTransit = getTransitWithMode(p1, p2, 'Taxi', true); // heavy traffic
+
+    expect(walkingTransit.mode).toBe('Walking');
+    expect(subwayTransit.mode).toBe('Subway');
+    expect(taxiTransit.mode).toBe('Taxi');
+    expect(taxiTransit.costApprox).toBeGreaterThan(subwayTransit.costApprox);
+  });
+
+  it('should handle custom discovery hotspot insertions in DayItinerary', () => {
+    const itinerary = generateItinerary(sampleInputs);
+    const day1 = itinerary.days[0];
+    
+    expect(day1.discovery).toBeUndefined();
+
+    // mock append custom discovery attraction
+    const mockAttraction = {
+      id: 'custom_spot',
+      name: 'Eiffel Sunset',
+      category: 'Culture' as const,
+      costLevel: 1 as 1 | 2 | 3,
+      costApprox: 0,
+      intensity: 'Low' as const,
+      isIndoor: true,
+      duration: 60,
+      coordinates: { x: 20, y: 50 },
+      description: 'Sunset view.',
+      imageUrl: '',
+      tips: ''
+    };
+
+    day1.discovery = {
+      type: 'attraction',
+      activity: mockAttraction,
+      durationMin: 60,
+      transitToNext: getTransitWithMode({ x: 20, y: 50 }, itinerary.hotel.coordinates, 'Walking')
+    };
+
+    expect(day1.discovery).toBeDefined();
+    expect(day1.discovery.activity.name).toBe('Eiffel Sunset');
+
+    const totalCost = calculateTotalCost(itinerary.days, itinerary.hotel, itinerary.days.length);
+    expect(totalCost).toBeGreaterThan(0);
   });
 });
 

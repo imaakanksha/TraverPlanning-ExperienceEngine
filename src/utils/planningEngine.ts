@@ -29,6 +29,7 @@ export interface DayItinerary {
   afternoon: ActivitySlot;
   dinner: DiningSlot;
   evening: ActivitySlot;
+  discovery?: ActivitySlot;
 }
 
 export interface Itinerary {
@@ -89,6 +90,51 @@ export function getTransit(
       costApprox = Math.round(costApprox * 1.3); // higher meters
     } else if (mode === 'Subway') {
       durationMin = Math.round(durationMin * 1.15); // slight subway crowds
+    } else if (mode === 'Walking') {
+      durationMin = Math.round(durationMin * 1.05);
+    }
+  }
+
+  return { mode, durationMin, costApprox };
+}
+
+// Custom transit mode builder based on user manual override
+export function getTransitWithMode(
+  p1: { x: number; y: number },
+  p2: { x: number; y: number },
+  mode: 'Walking' | 'Subway' | 'Taxi' | 'Train',
+  isHeavyTraffic: boolean = false
+): TransitInfo {
+  const dist = calculateDistance(p1, p2);
+  let durationMin = 0;
+  let costApprox = 0;
+
+  switch (mode) {
+    case 'Walking':
+      durationMin = Math.round(dist * 1.8);
+      costApprox = 0;
+      break;
+    case 'Subway':
+      durationMin = Math.round(8 + dist * 0.6);
+      costApprox = 2.5;
+      break;
+    case 'Taxi':
+      durationMin = Math.round(5 + dist * 0.9);
+      costApprox = Math.round(5 + dist * 0.4);
+      break;
+    case 'Train':
+      durationMin = Math.round(12 + dist * 0.5);
+      costApprox = 5.0;
+      break;
+  }
+
+  // Adjust for traffic
+  if (isHeavyTraffic) {
+    if (mode === 'Taxi') {
+      durationMin = Math.round(durationMin * 1.8);
+      costApprox = Math.round(costApprox * 1.3);
+    } else if (mode === 'Subway') {
+      durationMin = Math.round(durationMin * 1.15);
     } else if (mode === 'Walking') {
       durationMin = Math.round(durationMin * 1.05);
     }
@@ -259,6 +305,9 @@ export function calculateTotalCost(days: DayItinerary[], hotel: Hotel, daysCount
     cost += day.morning.activity.costApprox;
     cost += day.afternoon.activity.costApprox;
     cost += day.evening.activity.costApprox;
+    if (day.discovery) {
+      cost += day.discovery.activity.costApprox;
+    }
 
     // transits
     cost += day.breakfast.transitToNext?.costApprox || 0;
@@ -267,6 +316,9 @@ export function calculateTotalCost(days: DayItinerary[], hotel: Hotel, daysCount
     cost += day.afternoon.transitToNext?.costApprox || 0;
     cost += day.dinner.transitToNext?.costApprox || 0;
     cost += day.evening.transitToNext?.costApprox || 0;
+    if (day.discovery) {
+      cost += day.discovery.transitToNext?.costApprox || 0;
+    }
   });
   return Math.round(cost);
 }

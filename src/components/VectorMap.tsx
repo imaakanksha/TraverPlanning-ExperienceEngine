@@ -71,9 +71,22 @@ export const VectorMap: React.FC<VectorMapProps> = ({
         slot: 'evening',
         x: activeDay.evening.activity.coordinates.x, 
         y: activeDay.evening.activity.coordinates.y 
-      },
-      { id: `${hotel.id}_end`, name: hotel.name, type: 'hotel', x: hotel.coordinates.x, y: hotel.coordinates.y }
+      }
     ];
+
+    if (activeDay.discovery) {
+      pts.push({
+        id: activeDay.discovery.activity.id,
+        name: activeDay.discovery.activity.name,
+        type: 'attraction',
+        slot: 'discovery',
+        x: activeDay.discovery.activity.coordinates.x,
+        y: activeDay.discovery.activity.coordinates.y
+      });
+    }
+
+    pts.push({ id: `${hotel.id}_end`, name: hotel.name, type: 'hotel', x: hotel.coordinates.x, y: hotel.coordinates.y });
+
     return pts;
   }, [activeDay, hotel]);
 

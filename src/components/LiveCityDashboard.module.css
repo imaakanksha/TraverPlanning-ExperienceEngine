@@ -152,3 +152,41 @@
   color: hsl(var(--accent-secondary));
   text-decoration: underline;
 }
+
+.bypassLink {
+  background: transparent;
+  border: none;
+  color: #ef4444;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 2px 0;
+  transition: color var(--transition-fast);
+}
+
+.bypassLink:hover {
+  color: #f87171;
+  text-decoration: underline;
+}
+
+.addPlanLink {
+  background: transparent;
+  border: none;
+  color: #a855f7;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 2px 0;
+  transition: color var(--transition-fast);
+}
+
+.addPlanLink:hover {
+  color: #c084fc;
+  text-decoration: underline;
+}

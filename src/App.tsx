@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { generateItinerary, recalculateItinerary } from './utils/planningEngine';
+import { generateItinerary, recalculateItinerary, getTransitWithMode, calculateTotalCost } from './utils/planningEngine';
 import type { Itinerary } from './utils/planningEngine';
 import { PlannerWizard } from './components/PlannerWizard';
 import { ItineraryDashboard } from './components/ItineraryDashboard';
@@ -8,8 +8,10 @@ import { ExpenseAnalytics } from './components/ExpenseAnalytics';
 import { TravelJournal } from './components/TravelJournal';
 import { LiveCityDashboard } from './components/LiveCityDashboard';
 import { travelDatabase } from './data/travelDatabase';
+import type { Attraction } from './data/travelDatabase';
 import cacheService from './utils/cacheService';
 import logger from './utils/logger';
+import { ExportModal } from './components/ExportModal';
 import { 
   Compass, Calendar, BarChart3, BookOpen, Sun, Moon, 
   Sparkles, Home, Radio
@@ -20,6 +22,7 @@ function App() {
   const [activeDayNum, setActiveDayNum] = useState<number>(1);
   const [activeTab, setActiveTab] = useState<'itinerary' | 'dashboard' | 'simulator' | 'analytics' | 'journal'>('itinerary');
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [isExportOpen, setIsExportOpen] = useState<boolean>(false);
   
   // Simulator State
   const [isSimulating, setIsSimulating] = useState<boolean>(false);
@@ -170,22 +173,181 @@ function App() {
     logger.info('Saved daily stamp journal entry.', { dayNumber: dayNum });
   };
 
-  const handleAvoidIncident = (title: string) => {
-    logger.info('Rerouting around map incident.', { title });
-    setRecalcLogs(prev => [
-      ...prev,
-      `🚨 REROUTING ALERT: Received request to bypass incident: "${title}".`,
-      `🚦 Engine recalculated route coordinates for Day ${activeDayNum} to avoid gridlock. Transit recommendations updated.`
-    ]);
+  const handleChangeTransitMode = (
+    dayNum: number,
+    slotKey: 'breakfast' | 'morning' | 'lunch' | 'afternoon' | 'dinner' | 'evening' | 'discovery',
+    newMode: 'Walking' | 'Subway' | 'Taxi' | 'Train'
+  ) => {
+    if (!itinerary) return;
+
+    const updated: Itinerary = JSON.parse(JSON.stringify(itinerary));
+    const day = updated.days.find(d => d.dayNumber === dayNum);
+    if (day) {
+      const slot = day[slotKey];
+      if (slot && slot.transitToNext) {
+        const oldMode = slot.transitToNext.mode;
+        const p1 = slot.type === 'dining' ? slot.restaurant.coordinates : slot.activity.coordinates;
+        
+        let p2 = updated.hotel.coordinates;
+        if (slotKey === 'breakfast') p2 = day.morning.activity.coordinates;
+        else if (slotKey === 'morning') p2 = day.lunch.restaurant.coordinates;
+        else if (slotKey === 'lunch') p2 = day.afternoon.activity.coordinates;
+        else if (slotKey === 'afternoon') p2 = day.dinner.restaurant.coordinates;
+        else if (slotKey === 'dinner') p2 = day.evening.activity.coordinates;
+        else if (slotKey === 'evening') p2 = day.discovery ? day.discovery.activity.coordinates : updated.hotel.coordinates;
+        else if (slotKey === 'discovery' && day.discovery) p2 = updated.hotel.coordinates;
+
+        const isTraffic = triggeredEvents.TRAFFIC;
+        const newTransit = getTransitWithMode(p1, p2, newMode, isTraffic);
+        slot.transitToNext = newTransit;
+
+        updated.totalCost = calculateTotalCost(updated.days, updated.hotel, updated.days.length);
+        setItinerary(updated);
+
+        setRecalcLogs(prev => [
+          ...prev,
+          `🔄 TRANSIT OVERRIDE: Day ${dayNum} ${slotKey} transit switched to ${newMode} (was ${oldMode}). Time: ${newTransit.durationMin}m, Cost: $${newTransit.costApprox}.`,
+          `💰 Recomputed itinerary budget: $${updated.totalCost}.`
+        ]);
+      }
+    }
   };
 
-  const handleInsertHotspot = (title: string) => {
+  const handleAvoidIncident = (title: string) => {
+    if (!itinerary) return;
+    logger.info('Rerouting around map incident.', { title });
+    
+    const updated: Itinerary = JSON.parse(JSON.stringify(itinerary));
+    const day = updated.days.find(d => d.dayNumber === activeDayNum);
+    
+    if (day) {
+      let modeChanged = false;
+      const slots: ('breakfast' | 'morning' | 'lunch' | 'afternoon' | 'dinner' | 'evening')[] = [
+        'breakfast', 'morning', 'lunch', 'afternoon', 'dinner', 'evening'
+      ];
+      
+      for (const slotKey of slots) {
+        const slot = day[slotKey];
+        if (slot && slot.transitToNext) {
+          if (slot.transitToNext.mode === 'Taxi') {
+            slot.transitToNext.mode = 'Subway';
+            const p1 = slot.type === 'dining' ? slot.restaurant.coordinates : slot.activity.coordinates;
+            let p2 = updated.hotel.coordinates;
+            if (slotKey === 'breakfast') p2 = day.morning.activity.coordinates;
+            else if (slotKey === 'morning') p2 = day.lunch.restaurant.coordinates;
+            else if (slotKey === 'lunch') p2 = day.afternoon.activity.coordinates;
+            else if (slotKey === 'afternoon') p2 = day.dinner.restaurant.coordinates;
+            else if (slotKey === 'dinner') p2 = day.evening.activity.coordinates;
+            
+            slot.transitToNext = getTransitWithMode(p1, p2, 'Subway', false);
+            modeChanged = true;
+          }
+        }
+      }
+
+      (day as any).incidentBypassed = true;
+
+      updated.totalCost = calculateTotalCost(updated.days, updated.hotel, updated.days.length);
+      setItinerary(updated);
+
+      setRecalcLogs(prev => [
+        ...prev,
+        `🚨 REROUTING RESOLUTION: Bypassed incident "${title}" on Day ${activeDayNum}.`,
+        modeChanged 
+          ? `🚦 Switch vehicle transits to Subway. Resolved gridlock delays (-20 mins).`
+          : `🚦 Rerouted navigation lines around coordinates (48, 53) to secure walking safety pathways.`,
+        `💰 Updated total budget estimate: $${updated.totalCost}.`
+      ]);
+    }
+  };
+
+  const handleInsertHotspot = (title: string, customCoords?: { x: number; y: number }, customDesc?: string, customCat?: string) => {
+    if (!itinerary) return;
     logger.info('Inserting curated discovery pin into timeline.', { title });
-    setRecalcLogs(prev => [
-      ...prev,
-      `⭐ DISCOVERY ACTION: Added "${title}" to your priority attraction itinerary highlights.`,
-      `💰 Updated itinerary analytics thresholds.`
-    ]);
+
+    let coords = customCoords || { x: 68, y: 55 };
+    let description = customDesc || 'A curated trending local occurrence.';
+    let category = customCat || 'Culture';
+
+    const normalizedTitle = title.toLowerCase();
+    if (normalizedTitle.includes('teamlab')) {
+      coords = { x: 72, y: 55 };
+      description = 'Sensor tracking shows queue waits at teamLab Planets have dropped under 15 minutes.';
+      category = 'Adventure';
+    } else if (normalizedTitle.includes('senso-ji') || normalizedTitle.includes('sensō-ji')) {
+      coords = { x: 75, y: 25 };
+      description = 'The historic Kaminarimon lanterns are illuminated tonight.';
+      category = 'Culture';
+    } else if (normalizedTitle.includes('eiffel')) {
+      coords = { x: 20, y: 50 };
+      description = 'High pressure system offers crystal clear skies. Sunset visibilities are optimal.';
+      category = 'Historic';
+    } else if (normalizedTitle.includes('orsay')) {
+      coords = { x: 40, y: 48 };
+      description = 'Late-night gallery openings paired with live cello acoustics in the main clock plaza.';
+      category = 'Culture';
+    } else if (normalizedTitle.includes('trastevere')) {
+      coords = { x: 30, y: 65 };
+      description = 'Explore the culinary hotspots and dining alleyways in Piazza Santa Maria.';
+      category = 'Food';
+    } else if (normalizedTitle.includes('colosseum')) {
+      coords = { x: 62, y: 55 };
+      description = 'Exclusive night walk access inside the main arena ruins.';
+      category = 'Historic';
+    } else if (normalizedTitle.includes('broadway')) {
+      coords = { x: 45, y: 48 };
+      description = 'Actors Equity staging free 20-minute musical numbers in the center of Times Square.';
+      category = 'Culture';
+    } else if (normalizedTitle.includes('high line')) {
+      coords = { x: 38, y: 60 };
+      description = 'Scenic elevated park walking route ending near Chelsea Market.';
+      category = 'Relaxation';
+    } else if (normalizedTitle.includes('khan el-khalili') || normalizedTitle.includes('bazaar')) {
+      coords = { x: 62, y: 44 };
+      description = 'The ancient market central corridor is hosting sensory spice mixing demonstrations.';
+      category = 'Culture';
+    } else if (normalizedTitle.includes('pyramid') || normalizedTitle.includes('sphinx')) {
+      coords = { x: 10, y: 70 };
+      description = 'Laser mapping displays and historic narrations projected onto the Sphinx.';
+      category = 'Historic';
+    }
+
+    const customAttr: Attraction = {
+      id: `custom_hotspot_${Date.now()}`,
+      name: title,
+      category: category as any,
+      costLevel: 1,
+      costApprox: 0,
+      intensity: 'Low',
+      isIndoor: true,
+      duration: 60,
+      coordinates: coords,
+      description: description,
+      imageUrl: 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=500&auto=format&fit=crop&q=80',
+      tips: 'Curated discovery addition.'
+    };
+
+    const updated: Itinerary = JSON.parse(JSON.stringify(itinerary));
+    const day = updated.days.find(d => d.dayNumber === activeDayNum);
+    if (day) {
+      day.discovery = {
+        type: 'attraction',
+        activity: customAttr,
+        durationMin: 60,
+        transitToNext: getTransitWithMode(coords, updated.hotel.coordinates, 'Walking')
+      };
+      
+      day.evening.transitToNext = getTransitWithMode(day.evening.activity.coordinates, coords, 'Walking');
+
+      updated.totalCost = calculateTotalCost(updated.days, updated.hotel, updated.days.length);
+      setItinerary(updated);
+
+      setRecalcLogs(prev => [
+        ...prev,
+        `⭐ DISCOVERY ACTION: Added "${title}" to Day ${activeDayNum} schedule as a Nightcap Discovery!`,
+        `💰 Route updated. New total budget estimate: $${updated.totalCost}.`
+      ]);
+    }
   };
 
   const handleReset = () => {
@@ -219,9 +381,14 @@ function App() {
 
         <div className="header-actions" style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
           {itinerary && (
-            <button className="btn-secondary" onClick={handleReset} style={{ padding: '0.4rem 0.85rem', fontSize: '0.85rem' }} aria-label="Create new plan">
-              <Home size={14} /> New Plan
-            </button>
+            <>
+              <button className="btn-primary" onClick={() => setIsExportOpen(true)} style={{ padding: '0.4rem 0.85rem', fontSize: '0.85rem', background: 'linear-gradient(135deg, #a855f7, #ec4899)' }} aria-label="Export Ticket">
+                <Compass size={14} /> Export Ticket
+              </button>
+              <button className="btn-secondary" onClick={handleReset} style={{ padding: '0.4rem 0.85rem', fontSize: '0.85rem' }} aria-label="Create new plan">
+                <Home size={14} /> New Plan
+              </button>
+            </>
           )}
           <button 
             className="btn-icon" 
@@ -326,6 +493,8 @@ function App() {
                 triggeredEvents={triggeredEvents}
                 onAvoidIncident={handleAvoidIncident}
                 onInsertHotspot={handleInsertHotspot}
+                onChangeTransitMode={handleChangeTransitMode}
+                onToggleEvent={handleToggleEvent}
               />
             )}
 
@@ -336,6 +505,11 @@ function App() {
                 onFocusLocation={(coords, name) => {
                   setActiveTab('itinerary');
                   logger.info('Panning map focus on coordinate selection.', { coords, name });
+                }}
+                onAvoidIncident={handleAvoidIncident}
+                onInsertHotspot={(title, coords, desc, cat) => {
+                  handleInsertHotspot(title, coords, desc, cat);
+                  setActiveTab('itinerary');
                 }}
               />
             )}
@@ -372,6 +546,13 @@ function App() {
           </div>
         )}
       </main>
+      {itinerary && (
+        <ExportModal 
+          isOpen={isExportOpen}
+          onClose={() => setIsExportOpen(false)}
+          itinerary={itinerary}
+        />
+      )}
     </div>
   );
 }
